@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f2a3d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EDL SCI ALCF">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>État des lieux d'entrée et de sortie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#f2f5f7; --card:#ffffff; --ink:#122130; --muted:#5d6b7a; --line:#dde3ea;
+  --accent:#0b7285; --accent-ink:#ffffff;
+  --hero:#0f2a3d; --hero-ink:#ffffff; --hero-grid:rgba(255,255,255,.07);
+  --ok:#1f8a4c; --warn:#c77700; --bad:#d63a2f;
+  --c-parties:#3b5bdb; --c-logement:#0f9d8a; --c-compteurs:#e08a00; --c-cles:#8b5cf6; --c-pieces:#2f9e44; --c-retenues:#e8590c; --c-sign:#d6336c;
+  --pad-bg:#ffffff; --pad-line:#c9d2de;
+  --shadow:0 1px 2px rgba(18,33,48,.06),0 8px 24px rgba(18,33,48,.06);
+  --f-body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-head:"Bricolage Grotesque","Manrope",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1319; --card:#141e27; --ink:#e7eef4; --muted:#96a5b4; --line:#26333f;
+  --accent:#3bc9db; --accent-ink:#06141a; --hero:#0a1d2b; --hero-ink:#ffffff; --hero-grid:rgba(255,255,255,.06);
+  --ok:#51cf66; --warn:#fcc419; --bad:#ff6b6b;
+  --c-parties:#748ffc; --c-logement:#38d9a9; --c-compteurs:#ffc048; --c-cles:#b197fc; --c-pieces:#69db7c; --c-retenues:#ff922b; --c-sign:#f06595;
+  --pad-bg:#ffffff; --pad-line:#c9d2de; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0c1319; --card:#141e27; --ink:#e7eef4; --muted:#96a5b4; --line:#26333f;
+  --accent:#3bc9db; --accent-ink:#06141a; --hero:#0a1d2b; --hero-ink:#ffffff; --hero-grid:rgba(255,255,255,.06);
+  --ok:#51cf66; --warn:#fcc419; --bad:#ff6b6b;
+  --c-parties:#748ffc; --c-logement:#38d9a9; --c-compteurs:#ffc048; --c-cles:#b197fc; --c-pieces:#69db7c; --c-retenues:#ff922b; --c-sign:#f06595;
+  --pad-bg:#ffffff; --pad-line:#c9d2de; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark;}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:780px;margin:0 auto;padding-inline:16px;padding-block:16px 130px;display:flex;flex-direction:column;gap:16px}
+header{position:relative;overflow:hidden;padding:22px 20px 20px;border-radius:20px;color:var(--hero-ink);
+  background:linear-gradient(var(--hero-grid) 1px,transparent 1px) 0 0/22px 22px,linear-gradient(90deg,var(--hero-grid) 1px,transparent 1px) 0 0/22px 22px,var(--hero)}
+header::after{content:"";position:absolute;right:-40px;top:-40px;width:170px;height:170px;border-radius:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--c-pieces) 55%,transparent),transparent 70%);opacity:.55;pointer-events:none}
+.brand{font:800 clamp(2.4rem,11vw,3.4rem)/1 var(--f-head);letter-spacing:-.02em;margin:0 0 10px;background:linear-gradient(90deg,#63e6be,#ffd43b 55%,#ff8787);-webkit-background-clip:text;background-clip:text;color:transparent;position:relative;z-index:1}
+.kicker{display:inline-flex;gap:8px;align-items:center;font:500 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.12)}
+header h1{font:700 1.6rem/1.15 var(--f-head);margin:10px 0 6px;text-wrap:balance;letter-spacing:-.01em}
+.ref{font:12px/1.5 var(--f-mono);margin:0;opacity:.75}
+.howto{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;counter-reset:h}
+.howto li{counter-increment:h;background:var(--card);border-radius:14px;padding:12px;box-shadow:var(--shadow);font-size:13.5px;display:flex;gap:10px;align-items:flex-start}
+.howto li::before{content:counter(h);flex:none;width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font:600 12px var(--f-mono);color:#fff;background:var(--c)}
+.howto li:nth-child(1){--c:var(--c-parties)}.howto li:nth-child(2){--c:var(--c-compteurs)}.howto li:nth-child(3){--c:var(--c-sign)}.howto li:nth-child(4){--c:var(--c-pieces)}
+h3{font:600 1rem var(--f-head);margin:6px 0 0}
+fieldset#form{border:0;margin:0;padding:0;min-width:0;display:flex;flex-direction:column;gap:14px}
+[data-oid="parties"],#sigs{--c:var(--c-parties)}[data-oid="logement"]{--c:var(--c-logement)}[data-oid="compteurs"]{--c:var(--c-compteurs)}[data-oid="cles"]{--c:var(--c-cles)}[data-oid="pieces"]{--c:var(--c-pieces)}[data-oid="retenues"]{--c:var(--c-retenues)}#sigs{--c:var(--c-sign)}
+.step{background:var(--card);border-radius:18px;min-width:0;box-shadow:var(--shadow)}
+.step>summary{border-radius:18px}.step[open]>summary{border-radius:18px 18px 0 0}
+.step>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;transition:background .15s}
+.step[open]>summary{background:color-mix(in srgb,var(--c) 9%,var(--card))}
+.step>summary::-webkit-details-marker{display:none}
+.num{flex:none;width:38px;height:38px;border-radius:12px;background:var(--c,var(--accent));color:#fff;display:grid;place-items:center;font:700 16px var(--f-head);box-shadow:0 4px 12px color-mix(in srgb,var(--c,var(--accent)) 35%,transparent)}
+.st-title{font:600 1.15rem var(--f-head);flex:1;min-width:0}
+.step>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:0 4px 4px 0;transition:transform .2s}
+.step[open]>summary::after{transform:rotate(-135deg);margin-bottom:-4px}
+.step-body{padding:14px 16px 18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.chip{font:600 11.5px var(--f-mono);padding:4px 10px;border-radius:99px;background:color-mix(in srgb,var(--warn) 15%,var(--card));color:var(--warn);white-space:nowrap}
+.chip.ok{background:color-mix(in srgb,var(--ok) 15%,var(--card));color:var(--ok)}
+.chip.bad{background:color-mix(in srgb,var(--bad) 15%,var(--card));color:var(--bad)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.grid .wide{grid-column:1/-1}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld>span,.pair span{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid transparent;border-radius:12px;padding:11px 12px;width:100%;min-width:0;box-sizing:border-box;transition:border-color .15s,background .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--c,var(--accent));background:var(--card)}
+input[type=checkbox]{width:22px;height:22px;accent-color:var(--c,var(--accent))}
+textarea{resize:vertical}
+button:focus-visible,summary:focus-visible,.btn:focus-within{outline:2px solid var(--c,var(--accent));outline-offset:2px}
+.num-in{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.card{background:color-mix(in srgb,var(--c,var(--accent)) 5%,var(--card));border:1px solid color-mix(in srgb,var(--c,var(--accent)) 18%,var(--line));border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card-head{display:flex;gap:8px;align-items:center}
+.card.apt{--c:var(--c-logement);box-shadow:var(--shadow);border-width:1.5px}
+.card.apt select{font:600 1.05rem var(--f-head)}
+.card-head input{font-weight:700;background:transparent}
+.btn{font:600 14px var(--f-body);display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:99px;border:1.5px solid var(--c,var(--accent));background:transparent;color:var(--c,var(--accent));cursor:pointer;min-height:42px;transition:transform .1s,background .15s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--c,var(--accent));color:#fff;border-color:transparent;box-shadow:0 6px 16px color-mix(in srgb,var(--c,var(--accent)) 35%,transparent)}
+.btn.ghost{border-color:color-mix(in srgb,var(--c,var(--accent)) 35%,var(--line));background:var(--card)}
+.btn.danger{border-color:color-mix(in srgb,var(--bad) 50%,transparent);color:var(--bad)}
+.btn:disabled{opacity:.45;cursor:default;box-shadow:none}
+.btn.sm{min-height:36px;padding:6px 14px;font-size:13px}
+.x{flex:none;width:34px;height:34px;border-radius:10px;border:0;background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted);font-size:18px;cursor:pointer}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.note{background:color-mix(in srgb,var(--c,var(--accent)) 8%,var(--card));border-radius:14px;padding:12px 14px;font-size:13.5px}
+.note b.lbl{display:inline-flex;align-items:center;gap:6px;font:600 11.5px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--c,var(--accent));margin-bottom:6px}
+.note b.lbl::before{content:"i";width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--c,var(--accent));color:#fff;font:700 11px var(--f-head);text-transform:none}
+.note ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.room{border-radius:16px;min-width:0;background:var(--card);border:1px solid var(--line)}
+.room[open]{border-color:color-mix(in srgb,var(--c) 40%,var(--line))}
+.room>summary{list-style:none;display:flex;gap:10px;align-items:center;padding:12px 14px;cursor:pointer}
+.room>summary::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--c);flex:none}
+.room>summary::-webkit-details-marker{display:none}
+.room-name{font:600 1rem var(--f-head);flex:1;min-width:0}
+.room-body{padding:0 12px 14px;display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px;border-radius:14px;background:var(--bg);align-items:center;transition:background .2s}
+.row.worse{background:color-mix(in srgb,var(--bad) 12%,var(--card));box-shadow:0 0 0 1.5px color-mix(in srgb,var(--bad) 45%,transparent)}
+.row .el-label{grid-column:1/2;font-weight:600;border-color:transparent;background:transparent;padding:4px 2px}
+.row .x{grid-column:2;grid-row:1}
+.pair label{display:flex;flex-direction:column;gap:3px}
+.pair select{background:var(--card);font-weight:600}
+select[data-v="N"],select[data-v="B"]{background:color-mix(in srgb,var(--ok) 16%,var(--card));color:var(--ok)}
+select[data-v="U"]{background:color-mix(in srgb,var(--warn) 18%,var(--card));color:var(--warn)}
+select[data-v="M"],select[data-v="HS"]{background:color-mix(in srgb,var(--bad) 16%,var(--card));color:var(--bad)}
+.row .obs{grid-column:1/-1;background:var(--card)}
+.photos{display:flex;flex-direction:column;gap:8px}
+.rowph{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rowph figure{margin:0;position:relative;width:76px}
+.rowph img{width:76px;height:57px;object-fit:cover;border-radius:10px;display:block;box-shadow:var(--shadow);cursor:zoom-in}
+.rowph .x{position:absolute;top:3px;right:3px;width:24px;height:24px;font-size:13px;background:rgba(0,0,0,.55);color:#fff}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.thumbs figure{margin:0;position:relative}
+.thumbs img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;display:block;cursor:zoom-in}
+.thumbs figcaption{font:11px var(--f-mono);color:var(--muted)}
+.thumbs .x{position:absolute;top:4px;right:4px;width:28px;height:28px;font-size:15px;background:rgba(0,0,0,.55);color:#fff}
+.degr{display:flex;flex-direction:column;gap:6px}
+.degr div{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--bad) 10%,var(--card));font-size:14px}
+.totals{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:16px;border-radius:16px;color:#fff;font-variant-numeric:tabular-nums;
+  background:linear-gradient(135deg,var(--c-retenues),color-mix(in srgb,var(--c-retenues) 55%,var(--c-sign)))}
+.totals .v{font-family:var(--f-mono);text-align:right}
+.totals .big{font:700 1.15rem var(--f-head)}
+.sigs{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:14px}
+.sig-head{display:flex;align-items:center;gap:12px;font:600 1.15rem var(--f-head)}
+.pads{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.pad-card{display:flex;flex-direction:column;gap:6px;min-width:0;padding:12px;border-radius:16px;background:color-mix(in srgb,var(--c) 6%,var(--card))}
+.pad-title{font:600 1rem var(--f-head)}
+.pad-sub{font-size:13px;color:var(--muted)}
+canvas[data-pad]{width:100%;height:170px;background:var(--pad-bg);border:1.5px dashed var(--pad-line);border-radius:14px;touch-action:none;display:block}
+.pad-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;font:12px var(--f-mono);color:var(--muted)}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px;font-weight:500}
+.check{border:2px solid var(--bad);background:color-mix(in srgb,var(--bad) 9%,var(--card));border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.check-title{font:700 1.05rem var(--f-head);color:var(--bad)}
+.check-sub{font-weight:700;font-size:13px;color:var(--bad);text-transform:uppercase;letter-spacing:.05em}
+.check ul{margin:0;padding-left:18px;display:grid;gap:6px}
+.check li{color:var(--ink)}.check li::marker{color:var(--bad)}
+.check li span{margin-right:8px}
+.linkbtn{border:0;background:none;color:var(--bad);font:600 13px var(--f-body);text-decoration:underline;cursor:pointer;padding:0}
+.btn.danger.solid{background:var(--bad);color:#fff;border-color:transparent}
+.card.mode{--c:var(--c-sign)}
+.modeseg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--card);border-radius:12px;padding:3px}
+.mode-b{min-height:44px;border:0;border-radius:9px;background:transparent;color:var(--muted);font:700 13px var(--f-head);cursor:pointer;letter-spacing:.02em}
+.mode-b[aria-pressed="true"]{background:var(--c-sign);color:#fff}
+.hist{position:fixed;inset:0;z-index:30;background:color-mix(in srgb,var(--bg) 96%,#000);overflow:auto;padding:16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px}
+.hist-head{display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);padding:6px 0;font:600 1.1rem var(--f-head)}
+.hist-item{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow)}
+.hi-t{font-size:14px}
+.tag{display:inline-block;font:700 11px var(--f-mono);padding:2px 8px;border-radius:99px;color:#fff}
+.tag.entree{background:var(--c-logement)}.tag.sortie{background:var(--c-retenues)}.tag{background:var(--muted)}
+.banner{padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--ok) 15%,var(--card));color:var(--ok);font-weight:600}
+#msg,#driveMsg{margin:0;font-size:14px;font-weight:500}
+#msg.err,#driveMsg.err{color:var(--bad)}
+.bar{position:fixed;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+.bar-in{max-width:780px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.bar-txt{flex:1;min-width:0;font:12.5px/1.35 var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.bar-txt b{color:var(--ink);font-weight:600}
+.meter{height:6px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}
+.meter i{display:block;height:100%;width:0;border-radius:3px;transition:width .3s;background:linear-gradient(90deg,var(--c-parties),var(--c-logement),var(--c-pieces))}
+.foot{display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap}
+.ver{margin-right:auto;font:12px var(--f-mono);color:var(--muted)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+label.btn:focus-within{outline:2px solid var(--c,var(--accent));outline-offset:2px}
+.seg{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:var(--card);border-radius:12px;padding:3px}
+.seg-b{min-height:42px;border:0;border-radius:9px;background:transparent;color:var(--muted);font:700 14px var(--f-mono);cursor:pointer;transition:background .12s,color .12s,transform .08s}
+.seg-b:active{transform:scale(.94)}
+.seg-b[aria-pressed="true"][data-v="N"],.seg-b[aria-pressed="true"][data-v="B"]{background:var(--ok);color:#fff}
+.seg-b[aria-pressed="true"][data-v="U"]{background:var(--warn);color:#fff}
+.seg-b[aria-pressed="true"][data-v="M"],.seg-b[aria-pressed="true"][data-v="HS"]{background:var(--bad);color:#fff}
+.pair{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center}
+.pair .lab{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;width:52px}
+.row-top{grid-column:1/-1;display:flex;gap:6px;align-items:center}
+.row-top .el-label{flex:1;font-size:15.5px;font-weight:700}
+.more{grid-column:1/-1;display:none;flex-direction:column;gap:8px}
+.row.exp .more{display:flex}
+.more-b{grid-column:1/-1;justify-self:start;border:0;background:none;color:var(--c,var(--accent));font:600 13px var(--f-body);cursor:pointer;padding:2px 0}
+.row.exp .more-b{display:none}
+.sugg{display:flex;flex-wrap:wrap;gap:6px}
+.chip-b{border:1px solid color-mix(in srgb,var(--bad) 40%,var(--line));background:var(--card);color:var(--ink);border-radius:99px;padding:6px 11px;font:500 13px var(--f-body);cursor:pointer}
+.row.flash{animation:flash .45s}
+@keyframes flash{0%{box-shadow:0 0 0 2px color-mix(in srgb,var(--c,var(--accent)) 60%,transparent)}100%{box-shadow:0 0 0 0 transparent}}
+.roomnav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;gap:6px;overflow-x:auto;padding:8px 2px;margin:0 -2px;background:var(--card);scrollbar-width:none}
+.roomnav::-webkit-scrollbar{display:none}
+.rn{flex:none;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:7px 12px;font:600 13px var(--f-body);cursor:pointer;white-space:nowrap}
+.rn.part{border-color:var(--warn)}.rn.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--card))}.rn.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,var(--card))}
+.room-end{justify-content:space-between}
+.vet{font-size:13.5px;padding:8px 10px;border-radius:10px;background:var(--bg)}
+.dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--ok)}.dot.pending{background:var(--warn)}.dot.err{background:var(--bad)}
+.searchbar{display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:12px;background:var(--card);border:1.5px solid var(--line)}
+.searchbar input{border:0;background:transparent;padding:6px 0}
+.searchbar input:focus{background:transparent}
+.modal{position:fixed;inset:0;z-index:60;background:rgba(6,15,25,.78);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-inner{background:var(--card);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.4);max-width:920px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);font:600 1.1rem var(--f-head)}
+.modal-body{padding:14px 16px;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.modal-body iframe{width:100%;height:70vh;border:0;border-radius:12px;background:#fff}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
+.photo-editor{position:relative;line-height:0;border-radius:12px;overflow:hidden;background:#111}
+.photo-editor canvas{width:100%;height:auto;display:block;touch-action:none;cursor:crosshair}
+.photo-editor .hint{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.6);color:#fff;font:12px var(--f-mono);padding:4px 8px;border-radius:8px}
+.recap-table{display:grid;grid-template-columns:1fr auto;gap:6px 14px;font-size:14px}
+.recap-table .h{font:600 12px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);grid-column:1/-1;margin-top:4px}
+.recap-table .k{color:var(--muted)}
+.recap-table .v{text-align:right;font-variant-numeric:tabular-nums}
+.mat-line{grid-column:1/-1;display:flex;gap:6px;align-items:center;margin:-2px 0}
+.mat-sel{flex:0 1 auto;width:auto;max-width:100%;font-size:13px;font-weight:600;padding:6px 10px;border-radius:10px;
+  background:var(--card);border:1.5px solid var(--line);color:var(--ink);transition:border-color .15s}
+.mat-sel:focus{border-color:var(--c,var(--accent));outline:none}
+.mat-sel:not([data-empty]){background:color-mix(in srgb,var(--c,var(--accent)) 8%,var(--card))}
+@media (prefers-reduced-motion:reduce){.row.flash{animation:none}*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">SCI ALCF</div>
+    <span class="kicker" id="kicker">F4 - Appt 101 · 8 rue de Rebais, 77160 Provins</span>
+    <h1 id="mainTitle">État des lieux d'entrée et de sortie</h1>
+    <p class="ref">Loi n° 89-462 du 6 juillet 1989, art. 3-2 · Décret n° 2016-382 du 30 mars 2016</p>
+  </header>
+
+  <ol class="howto">
+    <li>Remplis chaque section avec le locataire, pièce par pièce.</li>
+    <li>Photographie les compteurs et chaque défaut.</li>
+    <li>Faites signer les deux parties à l'écran.</li>
+    <li>Clôture : le PDF signé et horodaté est généré. Envoie une copie au locataire.</li>
+  </ol>
+
+  <fieldset id="form"></fieldset>
+
+  <section class="sigs" id="sigs"></section>
+
+  <div id="histPanel" class="hist" hidden></div>
+  <div id="modalHost"></div>
+  <div class="foot">
+    <span class="ver" id="ver"></span>
+    <button class="btn ghost sm" data-act="pushApp" type="button" id="pushApp" hidden>Mettre à jour l'appli sur le Drive</button>
+    <button class="btn ghost sm" data-act="exportZip" type="button">Exporter le dossier (ZIP)</button>
+    <button class="btn danger" data-act="reset" type="button">Nouvel état des lieux (tout effacer)</button>
+  </div>
+  <p id="adminMsg" class="pad-sub"></p>
+</div>
+
+<div class="bar"><div class="bar-in">
+  <span id="saveDot" class="dot ok" aria-hidden="true"></span>
+  <div class="bar-txt"><div id="barTxt">Chargement…</div><div class="meter"><i id="meterFill"></i></div></div>
+  <button class="btn ghost sm" data-act="preview" type="button">Aperçu</button>
+  <button class="btn ghost" data-act="draft" type="button">PDF brouillon</button>
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+// Les bibliothèques ci-dessus sont chargées directement (balises <script src>), donc déjà prêtes.
+// __libsReady reste défini pour compatibilité avec le reste du code.
+window.__libsReady = Promise.resolve(
+  !!(window.jspdf && window.jspdf.jsPDF) &&
+  typeof window.JSZip !== "undefined"
+);
+</script>
+
+<script>
+(async function () {
+"use strict";
+try { await window.__libsReady; } catch (e) {}
+
+const CFG = {
+  driveEdlFolder: "1XIWwVKO-liDOT6D_sgdQmzZOEkXiNwgf",
+  driveDataFolder:"1FKgBMOpkKk30WVMOheBL9XjZIjg5svjo",
+  driveAppFolder:"1d5uyIZFOyXQ772JV4BlVKbhKHZmFHGmq",
+  adminPin:"pires77"
+};
+const APP_VERSION = "2026-10-01 v13";
+let adminOk = false;
+async function isOwnerUser() { try { if (!GAS && window.claude && window.claude.use) { const u = await window.claude.use("user"); return !!(u && u.isOwner && u.isOwner()); } } catch (_) {} return false; }
+async function ensureAdmin() {
+  if (adminOk) return true;
+  if (await isOwnerUser()) { adminOk = true; return true; }
+  const p = prompt("Code administrateur SCI (réservé au gérant) :");
+  if (p != null && p.trim() === CFG.adminPin) { adminOk = true; return true; }
+  return false;
+}
+
+const ETATS = [["","—"],["N","N · Neuf"],["B","B · Bon état"],["U","U · Usure normale"],["M","M · Mauvais état"],["HS","HS · Hors service"]];
+const ETAT_LONG = {N:"Neuf",B:"Bon état",U:"Usure normale",M:"Mauvais état",HS:"Hors service"};
+const RANK = {N:0,B:1,U:2,M:3,HS:4};
+const EL = {
+  piece:["Sol","Murs","Plafond","Fenêtres / vitrages","Volets / stores","Porte","Radiateur","Interrupteurs / prises / éclairage"],
+  chambre:["Sol","Murs","Plafond","Fenêtres / vitrages","Volets / stores","Porte","Placard","Radiateur","Interrupteurs / prises / éclairage"],
+  entree:["Sol","Murs","Plafond","Porte d'entrée / serrure","Placards","Interrupteurs / prises / éclairage","Interphone / visiophone"],
+  cuisine:["Sol","Murs / faïence","Plafond","Fenêtres / volets","Évier / robinetterie / siphon","Meubles hauts et bas","Plan de travail","Plaques / four / hotte","Réfrigérateur / lave-vaisselle","Interrupteurs / prises / éclairage"],
+  sdb:["Sol","Murs / faïence / joints","Plafond","Baignoire / douche / paroi","Lavabo / robinetterie","Meuble / miroir","VMC / aération","Sèche-serviettes","Interrupteurs / prises / éclairage"],
+  wc:["Sol","Murs","Plafond","Cuvette / abattant / chasse d'eau","Lave-mains","Porte"],
+  exterieur:["Sol","Garde-corps","Éclairage","Évacuation des eaux"],
+  annexe:["Porte / serrure","Sol","Murs","Éclairage"],
+  equip:["Chaudière / ballon d'eau chaude","Détecteur de fumée","Tableau électrique","VMC","Boîte aux lettres"],
+  meuble:["Literie (lit, matelas, couette)","Table et chaises","Rangements","Vaisselle et ustensiles","Luminaires","Électroménager","Rideaux / occultation"],
+  autre:["Sol","Murs","Plafond"],
+  escalier:["Marches","Rampe / garde-corps","Murs","Plafond","Éclairage"],
+  commun:["Sol","Murs","Plafond","Portes / serrures","Éclairage / minuterie","Vitrages"]
+};
+const ADDR = "8 rue de Rebais, 77160 Provins";
+const R_ = (n, t) => [n, t];
+const ROOMS = {
+  F2:[R_("Entrée / couloir","entree"),R_("Séjour","piece"),R_("Cuisine","cuisine"),R_("Chambre 1","chambre"),R_("Salle de bains","sdb"),R_("WC","wc"),R_("Équipements","equip")],
+  F3:[R_("Entrée / couloir","entree"),R_("Séjour","piece"),R_("Cuisine","cuisine"),R_("Chambre 1","chambre"),R_("Chambre 2","chambre"),R_("Salle de bains","sdb"),R_("WC","wc"),R_("Équipements","equip")],
+  F4:[R_("Entrée / couloir","entree"),R_("Séjour","piece"),R_("Cuisine","cuisine"),R_("Chambre 1","chambre"),R_("Chambre 2","chambre"),R_("Chambre 3","chambre"),R_("Salle de bains","sdb"),R_("WC","wc"),R_("Équipements","equip")],
+  F4dup:[R_("Entrée / couloir","entree"),R_("Séjour","piece"),R_("Cuisine","cuisine"),R_("Escalier intérieur","escalier"),R_("Chambre 1","chambre"),R_("Chambre 2","chambre"),R_("Chambre 3","chambre"),R_("Salle de bains","sdb"),R_("WC","wc"),R_("Équipements","equip")],
+  commun:[R_("Hall d'entrée","commun"),R_("Escaliers et paliers","commun"),R_("Couloirs","commun"),R_("Local poubelles","commun"),R_("Local compteurs","commun"),R_("Boîtes aux lettres","annexe"),R_("Parking / extérieurs","exterieur")]
+};
+const APTS = {
+  "F4-101":{label:"F4 - Appt 101",etage:"Appartement 101 (F4)",type:"T4",rooms:"F4",extra:[R_("Parking","annexe")],
+    data:{surface:"80",loyer:"",charges:"",depot:"",dateBail:"",dateEntree:"",chauffage:"",eau:"",grille:""},loc:{nom:"",email:""},
+    entree:null},
+  "F2-001":{label:"F2 - Appt 001",etage:"Appartement 001 (F2)",type:"T2",rooms:"F2"},
+  "F4 dup-002":{label:"F4 duplex - Appt 002",etage:"Appartement 002 (F4 duplex)",type:"T4",rooms:"F4dup"},
+  "F3-003":{label:"F3 - Appt 003",etage:"Appartement 003 (F3)",type:"T3",rooms:"F3"},
+  "F2-201":{label:"F2 - Appt 201",etage:"Appartement 201 (F2)",type:"T2",rooms:"F2"},
+  "SGX-commun":{label:"SGX - Constat parties communes (hors EDL)",etage:"Parties communes (SGX)",type:"Parties communes",rooms:"commun"}
+};
+function applyEntry(st, key) {
+  const a = APTS[key]; if (!a || !a.entree) return;
+  const E = a.entree;
+  st.pieces.forEach(r => r.elements.forEach(e => { if (E.def && !e.entree) e.entree = E.def; }));
+  if (E.obs) Object.entries(E.obs).forEach(([k, ov]) => {
+    const [rn, el] = k.split("|");
+    const r = st.pieces.find(x => x.nom === rn);
+    const e = r && r.elements.find(x => x.label === el);
+    if (e) e.entree = ov.v;
+  });
+  if (E.compteurs) st.compteurs.forEach(c => { const d = E.compteurs[c.label]; if (d && d.entree && !c.entree) c.entree = d.entree; });
+  if (E.cles) st.cles.forEach(c => { const d = E.cles[c.label]; if (d && d.entree && !c.entree) c.entree = d.entree; });
+}
+function applyApt(key) {
+  const a = APTS[key]; if (!a) return; const d = a.data || {}; const L = S.logement;
+  S.apt = key; L.adresse = ADDR; L.etage = a.etage; L.type = a.type;
+  ["surface","loyer","charges","depot","dateBail","dateEntree","chauffage","eau","grille"].forEach(k => L[k] = d[k] || "");
+  S.locataires = [{ nom:(a.loc && a.loc.nom) || "", adresse:"", tel:"", email:(a.loc && a.loc.email) || "" }];
+  S.pieces = ROOMS[a.rooms].concat(a.extra || []).map(([n, t]) => mkRoom(n, t));
+  applyEntry(S, key);
+  S.retenues = []; S.conforme = ""; S.obsLoc = ""; S.obsBail = ""; S.mandataire = ""; S.mandataireAdresse = "";
+  S.compteursPhotos = []; S.driveUrl = null; S.driveAt = null; S.sig = freshState().sig;
+  S.locked = false; S.readonly = false; S.clotureAt = null;
+  S.compteurs.forEach(c => { c.entree = ""; c.sortie = ""; c.numero = ""; c.photos = []; });
+  S.cles.forEach(c => { c.entree = ""; c.sortie = ""; c.obs = ""; });
+}
+function hasWork() {
+  return S.retenues.length || S.obsLoc || S.obsBail || S.sig.bailleur || S.sig.locataire ||
+    S.cles.some(c => c.sortie !== "" || c.obs) ||
+    S.locataires.some(l => l.adresse || l.tel) ||
+    S.pieces.some(r => (r.photos || []).length || r.elements.some(e => e.sortie || e.obs || (e.photos || []).length)) ||
+    S.compteurs.some(c => c.sortie !== "" || c.entree !== "" || (c.photos || []).length);
+}
+
+const GRID = [["","Pas de vétusté (100 % locataire)",0,0],["peinture","Peinture, papier peint",8,1],["moquette","Moquette",8,1],["pvc","Sol PVC / lino",10,1],["parquet","Parquet vitrifié",15,2],["carrelage","Carrelage, faïence",25,5],["joints","Joints silicone",5,0],["sanitaires","Sanitaires",20,3],["robinetterie","Robinetterie",12,2],["electromenager","Électroménager",10,1],["menuint","Menuiseries intérieures (portes, placards)",20,3],["menuext","Menuiseries extérieures (fenêtres)",25,5],["volets","Volets roulants / stores",15,2],["elec","Appareillage électrique",15,2],["chaudiere","Chaudière, chauffe-eau",15,2]];
+const VR = 0.10;
+
+/* Matériaux par type d'élément */
+const MATS = [
+  [/murs?\s*\/\s*fa[ïi]ence|fa[ïi]ence.*joints/i, ["Faïence","Peinture","Papier peint","Enduit"]],
+  [/sol/i,                                        ["Carrelage","Faïence","Parquet","Parquet flottant","Stratifié","PVC","Lino","Moquette","Béton","Pierre","Terre cuite"]],
+  [/plafond/i,                                    ["Peinture","Enduit","Plâtre","Lambris","Béton"]],
+  [/murs?/i,                                      ["Peinture","Papier peint","Faïence","Enduit","Plâtre","Lambris","Bois","Béton","Pierre"]],
+  [/fen[êe]tre|vitrage/i,                         ["PVC","Bois","Aluminium","Mixte bois-alu","Simple vitrage","Double vitrage","Triple vitrage"]],
+  [/volet|store/i,                                ["Volet roulant PVC","Volet roulant aluminium","Volet battant bois","Volet persienne","Store vénitien","Store enrouleur","Rideau"]],
+  [/porte d'entr[ée]e/i,                          ["Bois","PVC","Aluminium","Blindée","Acier"]],
+  [/porte/i,                                      ["Bois","PVC","Aluminium","Vitrée","Isoplane"]],
+  [/placard|meuble|rangement/i,                   ["Mélaminé","Bois","Laqué","Stratifié"]],
+  [/plan de travail/i,                            ["Stratifié","Bois massif","Granit","Quartz","Céramique","Inox"]],
+  [/plaque|four|hotte/i,                          ["Électrique","Gaz","Vitrocéramique","Induction"]],
+  [/[ée]vier|robinet|siphon/i,                    ["Inox","Céramique","Résine","Composite"]],
+  [/baignoire|douche|paroi/i,                     ["Acrylique","Résine","Fonte émaillée","Acier émaillé","Céramique","Verre"]],
+  [/lavabo|lave-mains/i,                          ["Céramique","Résine","Verre"]],
+  [/cuvette|abattant|chasse/i,                    ["Céramique","Résine"]],
+  [/radiateur|s[èe]che-serviettes/i,              ["Fonte","Acier","Aluminium","Sèche-serviettes","Électrique"]],
+  [/interrupteur|prise|[ée]clairage/i,            ["Blanc","Ivoire","Aluminium","Bois","Verre"]],
+  [/tableau [ée]lectrique/i,                      ["Schneider","Legrand","Hager","Autre"]],
+  [/marche/i,                                     ["Bois","Béton","Carrelage","Pierre","Moquette"]],
+  [/rampe|garde-corps/i,                          ["Bois","Métal","Verre","Inox"]],
+  [/vmc|a[ée]ration/i,                            ["Simple flux","Double flux"]],
+  [/chaudi[èe]re|ballon|chauffe-eau/i,            ["Gaz","Électrique","Fioul","Thermodynamique","Solaire"]],
+  [/d[ée]tecteur de fum[ée]e/i,                   ["Optique","Ionique"]],
+  [/bo[îi]te aux lettres/i,                       ["Standard","Normalisée"]],
+  [/r[ée]frig|lave-vaisselle|[ée]lectrom[ée]n/i,  ["Blanc","Inox","Noir"]],
+  [/literie|lit\b|matelas|couette/i,              ["Simple","Double","Queen size","King size"]],
+  [/table|chaise/i,                               ["Bois","Métal","Plastique","Verre"]],
+  [/rideau|occultation/i,                         ["Volet roulant","Store","Rideau","Persienne"]],
+  [/cave|parking|box/i,                           ["Béton","Carrelage","Gravier","Enrobé"]],
+  [/balcon|terrasse/i,                            ["Béton","Carrelage","Bois","Composite"]]
+];
+function matsFor(label){ for(const [re,list] of MATS) if(re.test(label||"")) return list; return []; }
+
+function guessGrid(label,mat){
+  const m=(mat||"").toLowerCase().trim();
+  if(m){
+    if(/carrelage|fa[ïi]ence|terre cuite|granit|quartz|c[ée]ramique/.test(m)) return "carrelage";
+    if(/parquet|stratifi/.test(m))                                            return "parquet";
+    if(/lino|^pvc$/.test(m))                                                  return "pvc";
+    if(/moquette/.test(m))                                                    return "moquette";
+    if(/papier peint|peinture|enduit|pl[âa]tre|toile/.test(m))                return "peinture";
+    if(/volet|store/.test(m) && !/rideau/.test(m))                            return "volets";
+    if(/simple vitrage|double vitrage|triple vitrage/.test(m))                return "menuext";
+    if(/aluminium|alu|mixte bois-alu/.test(m) && /fen[êe]tre/.test((label||"").toLowerCase())) return "menuext";
+    if(/m[ée]lamin|laqu|bois massif|lambris|blind[ée]e|isoplane/.test(m))     return "menuint";
+    if(/r[ée]sine|composite|fonte [ée]maill|acier [ée]maill|acrylique/.test(m)) return "sanitaires";
+    if(/inox/.test(m))                                                        return "robinetterie";
+  }
+  const l=(label||"").toLowerCase();
+  if(/fa[ïi]ence|carrelage/.test(l))return "carrelage";if(/joint/.test(l))return "joints";if(/mur|plafond|peinture|papier/.test(l))return "peinture";
+  if(/robinet|[ée]vier|siphon/.test(l))return "robinetterie";if(/baignoire|douche|lavabo|cuvette|lave-mains|wc/.test(l))return "sanitaires";
+  if(/plaque|four|hotte|r[ée]frig|lave-vaisselle|[ée]lectrom[ée]n/.test(l))return "electromenager";if(/volet|store/.test(l))return "volets";
+  if(/fen[êe]tre|vitrage/.test(l))return "menuext";if(/porte|placard|meuble/.test(l))return "menuint";if(/interrupteur|prise|[ée]clairage|tableau/.test(l))return "elec";
+  if(/chaudi[èe]re|ballon|chauffe/.test(l))return "chaudiere";return "";
+}
+
+const SUGG = [[/mur|plafond|faïence/i,["Trou de cheville","Tache","Peinture écaillée","Fissure","Traces de scotch","Moisissure"]],
+  [/sol/i,["Rayure","Brûlure","Tache","Lame décollée","Carreau fêlé","Trou"]],
+  [/porte|placard|meuble|plan de travail/i,["Rayure","Choc","Poignée cassée","Ne ferme plus","Trou"]],
+  [/fenêtre|vitrage|volet|store/i,["Vitre fêlée","Volet bloqué","Joint abîmé","Poignée cassée"]],
+  [/évier|robinet|lavabo|baignoire|douche|cuvette|lave-mains|siphon/i,["Fuite","Calcaire important","Émail éclaté","Bouché","Joint noirci"]],
+  [/interrupteur|prise|éclairage|tableau/i,["Cache cassé","Ne fonctionne plus","Ampoule manquante","Fils apparents"]],
+  [/plaque|four|hotte|réfrig|lave-vaisselle|électromén/i,["Sale","Ne fonctionne plus","Pièce manquante","Joint abîmé"]],
+  [/./,["Sale","Cassé","Manquant","Abîmé"]]];
+function suggFor(label) { for (const [re, list] of SUGG) if (re.test(label || "")) return list; return []; }
+
+const safeImg = u => /^data:image\/(jpeg|png|webp);base64,/.test(u || "") ? u : "";
+const uid = () => Math.random().toString(36).slice(2, 9);
+const pad2 = n => String(n).padStart(2, "0");
+const isoDate = d => d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+const hhmm = d => pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+const fmtDate = s => { if (!s) return ""; const [y, m, d] = s.split("-"); return d + "/" + m + "/" + y; };
+const fmtDT = iso => { if (!iso) return ""; const d = new Date(iso); return pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + "/" + d.getFullYear() + " à " + hhmm(d); };
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const num = v => { const n = parseFloat(String(v ?? "").replace(/\s/g, "").replace(",", ".")); return isNaN(n) ? 0 : n; };
+const eur = n => n.toLocaleString("fr-FR", { minimumFractionDigits:2, maximumFractionDigits:2 }) + " €";
+function b64ToUtf8(b64) {
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  try { return new TextDecoder("utf-8").decode(arr); } catch (e) { return bin; }
+}
+
+function mkRoom(nom, type) {
+  return {
+    id: uid(), nom, type,
+    elements: (EL[type] || EL.autre).map(l => ({ label:l, materiau:"", entree:"", sortie:"", obs:"", photos:[] })),
+    photos:[]
+  };
+}
+function freshState() {
+  const now = new Date();
+  return {
+    v:1, date:isoDate(now), heureDebut:hhmm(now), heureFin:"", lieu:"",
+    bailleur:{ nom:"", rcs:"", siege:"", representant:"", qualite:"Gérant", tel:"", email:"" },
+    locataires:[{ nom:"", adresse:"", tel:"", email:"" }],
+    mandataire:"",
+    logement:{ adresse:"", etage:"", type:"", surface:"", meuble:"vide", dateBail:"", dateEntree:"", loyer:"", charges:"", depot:"", chauffage:"", eau:"", grille:"" },
+    compteurs:[["Électricité heures pleines","kWh"],["Électricité heures creuses","kWh"],["Gaz","m³"],["Eau froide","m³"],["Eau chaude","m³"]]
+      .map(([l, u]) => ({ label:l, unite:u, numero:"", entree:"", sortie:"", photos:[] })),
+    compteursPhotos:[],
+    cles:["Porte d'entrée","Boîte aux lettres","Cave / garage","Badge / bip immeuble","Télécommande portail"]
+      .map(l => ({ label:l, entree:"", sortie:"", obs:"" })),
+    pieces:[mkRoom("Entrée / couloir","entree"),mkRoom("Séjour","piece"),mkRoom("Cuisine","cuisine"),
+      mkRoom("Chambre 1","chambre"),mkRoom("Chambre 2","chambre"),mkRoom("Chambre 3","chambre"),
+      mkRoom("Salle de bains","sdb"),mkRoom("WC","wc"),mkRoom("Parking","annexe"),mkRoom("Équipements","equip")],
+    dateCles:isoDate(now), mandataireAdresse:"", conforme:"", retenues:[], obsLoc:"", obsBail:"",
+    sig:{ bailleur:null, locataire:null, bailleurAt:null, locataireAt:null, lu:{ bailleur:false, locataire:false } },
+    typeEdl:"sortie", locked:false, readonly:false, clotureAt:null,
+    sendMail:true, prefilled:true, prefilled2:true, prefilled3:true, apt:"F4-101",
+    pdfHash:""
+  };
+}
+let S = freshState();
+const openSet = new Set(["parties"]);
+
+let idb = null;
+function idbOpen() {
+  return new Promise(res => {
+    setTimeout(() => res(null), 2500);
+    try {
+      const r = indexedDB.open("edl-sortie", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("kv");
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
+function idbGet(k) {
+  return new Promise(res => {
+    if (!idb) return res(null);
+    setTimeout(() => res(null), 2500);
+    try { const q = idb.transaction("kv").objectStore("kv").get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); } catch (e) { res(null); }
+  });
+}
+function idbSet(k, v) {
+  return new Promise(res => {
+    if (!idb) return res(false);
+    try {
+      const t = idb.transaction("kv", "readwrite");
+      t.objectStore("kv").put(v, k);
+      t.oncomplete = () => res(true);
+      t.onerror = () => res(false);
+      t.onabort = () => res(false);
+    } catch (e) { res(false); }
+  });
+}
+let saveT = null, saveState = "", saveOk = true;
+async function flushSave() {
+  clearTimeout(saveT); saveT = null;
+  const ok = await idbSet("state", S);
+  saveOk = ok; saveState = ok ? "enregistré" : "NON enregistré (stockage plein ou bloqué)";
+  if (!ok && !flushSave.warned) {
+    flushSave.warned = true;
+    msg(idb ? "Attention : la saisie n'a pas pu être enregistrée sur l'appareil." : "Ce navigateur n'enregistre pas le brouillon : garde la page ouverte jusqu'à la clôture.", true);
+  }
+  updateBar();
+}
+function scheduleSave() { saveState = "…"; updateBar(); clearTimeout(saveT); saveT = setTimeout(flushSave, 400); }
+addEventListener("visibilitychange", () => { if (document.hidden && saveT) flushSave(); });
+addEventListener("pagehide", () => { if (saveT) flushSave(); });
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (_) {}
+
+function getPath(o, k) { return k.split(".").reduce((a, p) => a == null ? a : a[p], o); }
+function setPath(o, k, v) { const ps = k.split("."); const last = ps.pop(); const t = ps.reduce((a, p) => a[p], o); t[last] = v; }
+
+function f(k, label, o = {}) {
+  const v = getPath(S, k) ?? "";
+  const id = "f-" + k.replace(/\./g, "-");
+  const cls = o.cls || "";
+  if (o.type === "textarea") return `<label class="fld ${cls}"><span>${label}</span><textarea id="${id}" data-k="${k}" rows="${o.rows || 3}" placeholder="${esc(o.ph || "")}">${esc(v)}</textarea></label>`;
+  if (o.type === "select") return `<label class="fld ${cls}"><span>${label}</span><select id="${id}" data-k="${k}">${o.options.map(([a, b]) => `<option value="${esc(a)}"${a === v ? " selected" : ""}>${esc(b)}</option>`).join("")}</select></label>`;
+  return `<label class="fld ${cls}"><span>${label}</span><input id="${id}" type="${o.type || "text"}" data-k="${k}" value="${esc(v)}" placeholder="${esc(o.ph || "")}"${o.im ? ` inputmode="${o.im}"` : ""}${o.num ? ' class="num-in"' : ""}></label>`;
+}
+const note = html => `<aside class="note"><b class="lbl">À savoir</b>${html}</aside>`;
+function step(id, n, title, body) {
+  return `<details class="step" data-oid="${id}"${openSet.has(id) ? " open" : ""}><summary><span class="num">${n}</span><span class="st-title">${title}</span><span class="chip" data-chip="${id}"></span></summary><div class="step-body">${body}</div></details>`;
+}
+const etatSel = (k, v) => `<div class="seg" role="radiogroup" data-seg="${k}">${ETATS.slice(1).map(([a, b]) => `<button type="button" class="seg-b" data-act="setEtat" data-k="${k}" data-v="${a}" aria-pressed="${a === v}" title="${b}">${a}</button>`).join("")}</div>`;
+
+function cptPhotos(i, c) {
+  const path = `compteurs.${i}.photos`, arr = c.photos || [];
+  return `<div class="rowph">${arr.map((p, k) => `<figure><img src="${safeImg(p.data)}" alt="Photo ${k + 1} du compteur" data-act="blurPhoto" data-p="${path}" data-i="${k}"><button type="button" class="x" data-act="delPhoto" data-p="${path}" data-i="${k}" aria-label="Supprimer la photo">×</button></figure>`).join("")}
+    <label class="btn ghost sm"><input type="file" accept="image/*" capture="environment" data-photo="${path}" class="sr-only">${arr.length ? "+ Autre photo" : "+ Photo du compteur"}</label>
+    <span class="pad-sub">${arr.length ? arr.length + " photo" + (arr.length > 1 ? "s" : "") + " · " + fmtDT(arr[arr.length - 1].at) : "Index lisible sur la photo"}</span></div>`;
+}
+function rowPhotos(i, j, e) {
+  const path = `pieces.${i}.elements.${j}.photos`, arr = e.photos || [];
+  return `<div class="rowph">${arr.map((p, k) => `<figure><img src="${safeImg(p.data)}" alt="Photo ${k + 1} de l'élément" data-act="blurPhoto" data-p="${path}" data-i="${k}"><button type="button" class="x" data-act="delPhoto" data-p="${path}" data-i="${k}" aria-label="Supprimer la photo">×</button></figure>`).join("")}
+    <label class="btn ghost sm"><input type="file" accept="image/*" capture="environment" data-photo="${path}" class="sr-only">+ Photo du défaut${arr.length ? ` (${arr.length})` : ""}</label></div>`;
+}
+function photosBlock(path) {
+  const arr = getPath(S, path) || [];
+  return `<div class="photos"><div class="thumbs">${arr.map((p, k) => `<figure><img src="${safeImg(p.data)}" alt="Photo ${k + 1}" data-act="blurPhoto" data-p="${path}" data-i="${k}"><figcaption>${fmtDT(p.at)}</figcaption><button type="button" class="x" data-act="delPhoto" data-p="${path}" data-i="${k}" aria-label="Supprimer la photo">×</button></figure>`).join("")}</div>
+    <label class="btn ghost" style="align-self:flex-start"><input type="file" accept="image/*" multiple data-photo="${path}" class="sr-only">+ Ajouter des photos${arr.length ? ` (${arr.length})` : ""}</label></div>`;
+}
+function modeCard() {
+  const t = S.typeEdl;
+  return `<div class="card mode"><div class="modeseg" role="radiogroup" aria-label="Type d'état des lieux">
+    <button type="button" class="mode-b" data-act="setType" data-t="entree" aria-pressed="${t === 'entree'}">État d'ENTRÉE</button>
+    <button type="button" class="mode-b" data-act="setType" data-t="sortie" aria-pressed="${t === 'sortie'}">État de SORTIE</button></div>
+    <div class="actions">
+      <button type="button" class="btn ghost sm" data-act="openHist">Historique / comparer</button>
+      <button type="button" class="btn ghost sm" data-act="openRecap">Récapitulatif</button>
+    </div>
+    <p class="pad-sub" style="margin:0">${t === 'entree' ? "Entrée d'un nouveau locataire : une seule colonne d'état." : "Sortie : colonnes entrée et sortie, avec comparaison."}</p></div>`;
+}
+function aptCard() {
+  return `<div class="card apt"><label class="fld"><span>Logement concerné</span><select id="aptSel">${Object.entries(APTS).map(([k, a]) => `<option value="${esc(k)}"${k === S.apt ? " selected" : ""}>${esc(a.label)}</option>`).join("")}</select></label>
+    <div class="actions"><button type="button" class="btn primary" data-act="loadApt">Charger ce logement</button></div>
+    <p class="pad-sub" style="margin:0">Charge les pièces et les informations connues du logement choisi.</p></div>`;
+}
+const ROOM_TYPES = [["piece","Pièce de vie"],["chambre","Chambre"],["cuisine","Cuisine"],["sdb","Salle de bains"],["wc","WC"],["entree","Entrée / couloir"],["exterieur","Balcon / terrasse"],["annexe","Cave / parking / box"],["equip","Équipements"],["meuble","Inventaire meublé"],["autre","Autre"]];
+
+function secParties() {
+  const locs = S.locataires.map((l, i) => `<div class="card"><div class="card-head"><b style="flex:1">Locataire ${i + 1}</b>${S.locataires.length > 1 ? `<button type="button" class="x" data-act="delLoc" data-i="${i}" aria-label="Retirer ce locataire">×</button>` : ""}</div>
+    <div class="grid">${f(`locataires.${i}.nom`, "Nom et prénom")}${f(`locataires.${i}.tel`, "Téléphone", { type:"tel" })}${f(`locataires.${i}.email`, "E-mail", { type:"email" })}${f(`locataires.${i}.adresse`, "Nouvelle adresse (obligatoire)", { cls:"wide", ph:"Adresse où restituer le dépôt de garantie" })}</div></div>`).join("");
+  return step("parties", 1, "Parties et date", `
+    <div class="grid">${f("date", "Date de l'état des lieux", { type:"date" })}${f("heureDebut", "Heure de début", { type:"time" })}${f("lieu", "Fait à", { ph:"Ville" })}</div>
+    <h3>Bailleur</h3>
+    <div class="grid">${f("bailleur.nom", "Dénomination de la SCI")}${f("bailleur.rcs", "RCS / SIREN", { num:1 })}${f("bailleur.siege", "Siège social", { cls:"wide" })}${f("bailleur.representant", "Représentée par", { type:"select", options:[["","Choisir…"],["Fernando PIRES","Fernando PIRES"],["Lauryane PIRES","Lauryane PIRES"],["Clément PIRES","Clément PIRES"],["Aurélia LE CORRE","Aurélia LE CORRE"]] })}${f("bailleur.qualite", "Qualité")}${f("bailleur.tel", "Téléphone", { type:"tel" })}${f("bailleur.email", "E-mail", { type:"email" })}</div>
+    <h3>Locataire(s)</h3>${locs}
+    <div class="actions"><button type="button" class="btn ghost" data-act="addLoc">+ Ajouter un locataire</button></div>
+    <div class="grid">${f("mandataire", "Mandataire du locataire : nom (si procuration)", { ph:"Procuration écrite jointe" })}${f("mandataireAdresse", "Domicile du mandataire")}</div>
+    ${note(`<ul><li>La nouvelle adresse du locataire fait partie des mentions obligatoires de l'état des lieux de sortie (décret du 30 mars 2016).</li><li>S'il refuse de la donner, écris « Non communiquée » et demande un RIB.</li><li>Un mandataire du locataire : son nom et son domicile sont obligatoires.</li></ul>`)}`);
+}
+function secLogement() {
+  return step("logement", 2, "Logement et bail", `
+    <div class="grid">${f("logement.adresse", "Adresse du logement", { cls:"wide" })}${f("logement.etage", "Bâtiment / étage / porte")}
+    ${f("logement.type", "Type", { type:"select", options:["Studio","T1","T2","T3","T4","T5","Maison","Parties communes"].map(x => [x, /^T\d$/.test(x) ? x + " (F" + x[1] + ")" : x]) })}
+    ${f("logement.surface", "Surface habitable (m²)", { im:"decimal", num:1 })}
+    ${f("logement.meuble", "Location", { type:"select", options:[["vide","Vide"],["meuble","Meublée"]] })}
+    ${f("logement.dateBail", "Date de prise d'effet du bail", { type:"date" })}${f("logement.dateEntree", "Date de l'état des lieux d'entrée", { type:"date" })}
+    ${f("logement.loyer", "Loyer mensuel hors charges (€)", { im:"decimal", num:1 })}${f("logement.charges", "Provision pour charges (€)", { im:"decimal", num:1 })}${f("logement.depot", "Dépôt de garantie versé (€)", { im:"decimal", num:1 })}
+    ${f("logement.chauffage", "Chauffage", { type:"select", options:[["",""],["Individuel gaz","Individuel gaz"],["Individuel électrique","Individuel électrique"],["Collectif","Collectif"],["Autre","Autre"]] })}
+    ${f("logement.eau", "Eau chaude", { type:"select", options:[["",""],["Individuelle","Individuelle"],["Collective","Collective"]] })}${f("logement.grille", "Grille de vétusté annexée au bail", { type:"select", options:[["",""],["oui","Oui"],["non","Non"]] })}${f("dateCles", "Date de remise des clés", { type:"date" })}</div>
+    ${note(`<ul><li>Garde l'état des lieux d'entrée sous les yeux : chaque élément se compare à son état d'origine.</li><li>Si une grille de vétusté est annexée au bail, elle s'impose pour calculer les retenues.</li><li>Le délai de restitution du dépôt court à partir de la remise des clés.</li></ul>`)}`);
+}
+function secCompteurs() {
+  const rows = S.compteurs.map((c, i) => `<div class="card"><div class="card-head"><input id="f-cpt-${i}" data-k="compteurs.${i}.label" value="${esc(c.label)}" aria-label="Nom du compteur"><button type="button" class="x" data-act="delCpt" data-i="${i}" aria-label="Retirer ce compteur">×</button></div>
+    <div class="grid">${f(`compteurs.${i}.numero`, "N° / PDL / PCE", { num:1 })}${f(`compteurs.${i}.entree`, `Index entrée (${esc(c.unite)})`, { im:"decimal", num:1 })}${f(`compteurs.${i}.sortie`, `Index sortie (${esc(c.unite)})`, { im:"decimal", num:1 })}</div>${cptPhotos(i, c)}</div>`).join("");
+  return step("compteurs", 3, "Relevés des compteurs", `${rows}
+    <div class="actions"><button type="button" class="btn ghost" data-act="addCpt">+ Ajouter un compteur</button></div>
+    ${S.compteursPhotos.length ? `<h3>Autres photos (anciennes)</h3>${photosBlock("compteursPhotos")}` : ""}
+    ${note(`<ul><li>Une photo par compteur, avec l'index lisible.</li><li>Le locataire résilie lui-même ses contrats d'énergie et transmet ces index à ses fournisseurs.</li></ul>`)}`);
+}
+function secCles() {
+  const rows = S.cles.map((c, i) => {
+    const bad = c.sortie !== "" && c.entree !== "" && num(c.sortie) < num(c.entree);
+    return `<div class="row${bad ? " worse" : ""}" data-cle="${i}"><input class="el-label" id="f-cle-${i}" data-k="cles.${i}.label" value="${esc(c.label)}" aria-label="Type de clé"><button type="button" class="x" data-act="delCle" data-i="${i}" aria-label="Retirer">×</button>
+      <div class="pair"><label><span>Remis à l'entrée</span><input id="f-cle-${i}-e" class="num-in" data-k="cles.${i}.entree" value="${esc(c.entree)}" inputmode="numeric"></label><label><span>Rendu à la sortie</span><input id="f-cle-${i}-s" class="num-in" data-k="cles.${i}.sortie" value="${esc(c.sortie)}" inputmode="numeric"></label></div>
+      <input class="obs" id="f-cle-${i}-o" data-k="cles.${i}.obs" value="${esc(c.obs)}" placeholder="Observations"></div>`;
+  }).join("");
+  return step("cles", 4, "Clés et accès", `${rows}
+    <div class="actions"><button type="button" class="btn ghost" data-act="addCle">+ Ajouter un type de clé</button></div>
+    ${note(`<ul><li>Le locataire rend toutes les clés, y compris les doubles qu'il a fait faire.</li><li>Une clé manquante peut justifier le remplacement du cylindre à ses frais.</li></ul>`)}`);
+}
+function rowExpanded(e) { const st = stateOf(e); return !!(isWorse(e) || st === "M" || st === "HS" || (e.obs || "").trim() || (e.photos || []).length); }
+function suggHtml(i, j, e) {
+  const st = stateOf(e); const show = isWorse(e) || st === "M" || st === "HS"; if (!show) return "";
+  return `<div class="sugg">${suggFor(e.label).map(t => `<button type="button" class="chip-b" data-act="sugg" data-i="${i}" data-j="${j}" data-t="${esc(t)}">${esc(t)}</button>`).join("")}</div>`;
+}
+function matHtml(i, j, e) {
+  const list = matsFor(e.label); if (!list.length) return "";
+  return `<div class="mat-line"><select class="mat-sel" data-k="pieces.${i}.elements.${j}.materiau" aria-label="Matériau de l'élément"${e.materiau ? "" : ' data-empty="1"'}>
+    <option value="">— Matière —</option>
+    ${list.map(m => `<option value="${esc(m)}"${m === e.materiau ? " selected" : ""}>${esc(m)}</option>`).join("")}
+    ${e.materiau && !list.includes(e.materiau) ? `<option value="${esc(e.materiau)}" selected>${esc(e.materiau)}</option>` : ""}
+  </select></div>`;
+}
+function rowHtml(i, j, e) {
+  const w = isWorse(e), exp = rowExpanded(e);
+  return `<div class="row${w ? " worse" : ""}${exp ? " exp" : ""}" data-row="${i}.${j}">
+    <div class="row-top"><input class="el-label" id="f-p${i}-e${j}-l" data-k="pieces.${i}.elements.${j}.label" value="${esc(e.label)}" aria-label="Élément">
+    <button type="button" class="x" data-act="delEl" data-i="${i}" data-j="${j}" aria-label="Retirer l'élément">×</button></div>
+    ${matHtml(i, j, e)}
+    ${isEntry()
+      ? `<div class="pair"><div class="lab">État</div>${etatSel(`pieces.${i}.elements.${j}.entree`, e.entree)}</div>`
+      : `<div class="pair"><div class="lab">Entrée</div>${etatSel(`pieces.${i}.elements.${j}.entree`, e.entree)}<div class="lab">Sortie</div>${etatSel(`pieces.${i}.elements.${j}.sortie`, e.sortie)}</div>`}
+    <button type="button" class="more-b" data-act="expand" data-i="${i}" data-j="${j}">+ Note ou photo</button>
+    <div class="more">${suggHtml(i, j, e)}<input class="obs" id="f-p${i}-e${j}-o" data-k="pieces.${i}.elements.${j}.obs" value="${esc(e.obs)}" placeholder="Observation : nature, taille en cm, emplacement" enterkeyhint="done">${rowPhotos(i, j, e)}</div></div>`;
+}
+function roomHtml(r, i) {
+  const rows = r.elements.map((e, j) => rowHtml(i, j, e)).join("");
+  const last = i === S.pieces.length - 1;
+  return `<details class="room" data-oid="r${r.id}" data-ri="${i}"${openSet.has("r" + r.id) ? " open" : ""}><summary><span class="room-name" data-roomname="${i}">${esc(r.nom)}</span><span class="chip" data-roomchip="${i}"></span></summary>
+  <div class="room-body">
+    ${f(`pieces.${i}.nom`, "Nom de la pièce")}
+    <div class="actions">${isEntry()
+      ? `<button type="button" class="btn ghost sm" data-act="allN" data-i="${i}">Tout en bon état (B)</button>`
+      : `<button type="button" class="btn ghost sm" data-act="allB" data-i="${i}">Entrée : tout en bon état (B)</button><button type="button" class="btn ghost sm" data-act="copy" data-i="${i}">Sortie = entrée</button>`}</div>
+    ${rows}
+    <div class="actions"><button type="button" class="btn ghost sm" data-act="addEl" data-i="${i}">+ Ajouter un élément</button></div>
+    <h3>Vue générale de la pièce</h3>${photosBlock(`pieces.${i}.photos`)}
+    <div class="actions room-end"><button type="button" class="btn primary" data-act="nextRoom" data-i="${i}">${last ? (isEntry() ? "Terminer : signatures →" : "Terminer : aller au bilan →") : "Pièce suivante : " + esc(S.pieces[i + 1].nom) + " →"}</button><button type="button" class="btn danger sm" data-act="delRoom" data-i="${i}">Supprimer la pièce</button></div>
+  </div></details>`;
+}
+function roomNav() {
+  return `<nav class="roomnav" aria-label="Pièces">${S.pieces.map((r, i) => `<button type="button" class="rn" data-act="gotoRoom" data-i="${i}" data-rn="${i}">${esc(r.nom)}</button>`).join("")}</nav>`;
+}
+function secPieces() {
+  return step("pieces", 5, "État pièce par pièce", `
+    <div class="searchbar"><span aria-hidden="true">🔍</span><input type="search" id="roomSearch" placeholder="Rechercher une pièce…" aria-label="Rechercher une pièce" autocomplete="off"></div>
+    ${roomNav()}
+    <p style="margin:0;font-size:13.5px;color:var(--muted)">Touche un code : N neuf · B bon état · U usure normale · M mauvais état · HS hors service. Touche à nouveau pour effacer.${isEntry() ? "" : " Une ligne rouge signale un état de sortie moins bon qu'à l'entrée."}</p>
+    <div id="roomsList">${S.pieces.map(roomHtml).join("")}</div>
+    <div class="card"><b>Ajouter une pièce</b><div class="grid">
+      <label class="fld"><span>Type</span><select id="newRoomType">${ROOM_TYPES.map(([a, b]) => `<option value="${a}">${b}</option>`).join("")}</select></label>
+      <label class="fld"><span>Nom</span><input id="newRoomName" placeholder="Ex. Chambre 3"></label></div>
+      <div class="actions"><button type="button" class="btn" data-act="addRoom">+ Ajouter la pièce</button></div></div>
+    ${note(`<ul><li>Décris chaque défaut avec précision : nature, taille en cm, emplacement.</li><li>Une case vide ne prouve rien et joue contre toi.</li><li>L'usure normale (vétusté) reste à ta charge.</li><li>Une photo datée pour chaque défaut.</li></ul>`)}`);
+}
+function vet(r) {
+  const g = GRID.find(x => x[0] === (r.grille || "")) || GRID[0]; const D = g[2], F = g[3];
+  if (!D) return { taux:1, age:null, g };
+  const pose = r.pose || S.logement.dateEntree; const end = S.dateCles || S.date;
+  const age = pose && end ? Math.max(0, (new Date(end) - new Date(pose)) / (365.25 * 864e5)) : 0;
+  const ab = (1 - VR) / (D - F);
+  const taux = Math.min(1, Math.max(VR, 1 - Math.max(0, age - F) * ab));
+  return { taux, age, g };
+}
+function retAuto(r) { if (r.cout !== "" && r.cout != null && num(r.cout) > 0) r.montant = (num(r.cout) * vet(r).taux).toFixed(2); }
+function retInfo(r) {
+  const v = vet(r); if (!(num(r.cout) > 0)) return "Saisis le coût des travaux (devis) pour calculer la part du locataire.";
+  return `Âge : ${v.age == null ? "—" : v.age.toFixed(1).replace(".", ",") + " an(s)"} · part locataire ${Math.round(v.taux * 100)} % → <b>${eur(num(r.montant))}</b>`;
+}
+function retHtml(r, i) {
+  return `<div class="card"><div class="card-head"><b style="flex:1">Retenue ${i + 1}</b><button type="button" class="x" data-act="delRet" data-i="${i}" aria-label="Retirer">×</button></div>
+    <div class="grid">${f(`retenues.${i}.element`, "Pièce / élément")}${f(`retenues.${i}.degradation`, "Dégradation", { cls:"wide" })}
+    ${f(`retenues.${i}.grille`, "Type d'élément (vétusté)", { type:"select", options:GRID.map(g => [g[0], g[1] + (g[2] ? ` · ${g[2]} ans` : "")]) })}
+    ${f(`retenues.${i}.pose`, "Date de pose ou dernière réfection", { type:"date" })}
+    ${f(`retenues.${i}.cout`, "Coût des travaux (€)", { im:"decimal", num:1 })}${f(`retenues.${i}.montant`, "Montant retenu (€)", { im:"decimal", num:1 })}
+    ${f(`retenues.${i}.justif`, "Justificatif (devis, facture)", { cls:"wide" })}</div>
+    <div class="vet" data-vet="${i}">${retInfo(r)}</div></div>`;
+}
+function secRetenues() {
+  if (isEntry()) return step("retenues", 6, "Dépôt de garantie et observations", `
+    ${f("logement.depot", "Dépôt de garantie reçu (€)", { im:"decimal", num:1 })}
+    ${f("obsLoc", "Observations du locataire", { type:"textarea" })}
+    ${f("obsBail", "Observations du bailleur", { type:"textarea" })}
+    ${note(`<ul><li>À l'entrée, tu remets un exemplaire de cet état des lieux au locataire. Il peut demander à le compléter dans les 10 jours (art. 3-2 de la loi de 1989).</li><li>Le dépôt de garantie d'un logement vide est au plus un mois de loyer hors charges.</li><li>Conserve cet état d'entrée : il servira de référence à la sortie.</li></ul>`)}`);
+  const p = penalite();
+  return step("retenues", 6, "Bilan et dépôt de garantie", `
+    ${f("conforme", "Conclusion", { type:"select", options:[["","Choisir…"],["oui","Logement conforme à l'entrée, hors usure normale"],["non","Dégradations constatées"]] })}
+    <div id="degr"></div>
+    <h3>Retenues envisagées</h3>
+    <div id="retList">${S.retenues.map((r, i) => retHtml(r, i)).join("")}</div>
+    <div class="actions"><button type="button" class="btn ghost" data-act="addRet">+ Ajouter une retenue</button></div>
+    <div class="totals" id="totals"></div>
+    ${p > 0 ? `<div class="banner" style="background:color-mix(in srgb,var(--warn) 15%,var(--card));color:var(--warn)">Pénalité de retard estimée (10 % du loyer mensuel par mois commencé) : <b>${eur(p)}</b> — due au locataire.</div>` : ""}
+    ${f("obsLoc", "Observations du locataire", { type:"textarea" })}
+    ${f("obsBail", "Observations du bailleur", { type:"textarea" })}
+    ${note(`<ul><li>Délai de restitution du dépôt (art. 22, loi de 1989) : 1 mois après la remise des clés si l'état est conforme, 2 mois s'il y a des différences.</li><li>Retard : pénalité de 10 % du loyer mensuel hors charges par mois commencé.</li><li>Chaque retenue se justifie par un devis ou une facture.</li><li>La signature du locataire vaut constat de l'état du logement, pas accord sur les montants.</li></ul>`)}`);
+}
+function render() {
+  const k = document.getElementById("kicker");
+  if (k) k.textContent = (APTS[S.apt] ? APTS[S.apt].label + " · " : "") + ADDR;
+  document.body.dataset.mode = S.typeEdl;
+  { const mt = document.getElementById("mainTitle"); if (mt) mt.textContent = "État des lieux d'entrée et de sortie"; document.title = "État des lieux d'entrée et de sortie - SCI ALCF"; }
+  document.getElementById("form").innerHTML = modeCard() + aptCard() + secParties() + secLogement() + secCompteurs() + secCles() + secPieces() + secRetenues();
+  renderDegr(); renderTotals(); updateStatus(); applyLock();
+}
+
+function isEntry() { return S.typeEdl === "entree"; }
+function stateOf(e) { return isEntry() ? e.entree : e.sortie; }
+function isWorse(e) { return !isEntry() && e.sortie && e.entree && RANK[e.sortie] > RANK[e.entree]; }
+function degraded() {
+  const out = [];
+  S.pieces.forEach((r, i) => r.elements.forEach((e, j) => {
+    if (isWorse(e) || e.sortie === "M" || e.sortie === "HS") out.push({ i, j, r, e });
+  }));
+  return out;
+}
+function renderDegr() {
+  const el = document.getElementById("degr"); if (!el) return;
+  const d = degraded();
+  el.innerHTML = d.length ? `<h3>Écarts relevés (${d.length})</h3><div class="degr">${d.map(x => `<div><span>${esc(x.r.nom)} · ${esc(x.e.label)}${x.e.materiau ? " (" + esc(x.e.materiau) + ")" : ""} : ${esc(x.e.entree || "?")} → ${esc(x.e.sortie)}${(x.e.photos || []).length ? " · " + x.e.photos.length + " photo(s)" : " · sans photo"}</span><button type="button" class="btn ghost" data-act="toRet" data-i="${x.i}" data-j="${x.j}">Ajouter en retenue</button></div>`).join("")}</div>` : "";
+}
+function addMonths(iso, n) {
+  if (!iso) return null;
+  const d = new Date(iso + "T12:00:00");
+  const day = d.getDate();
+  d.setMonth(d.getMonth() + n);
+  if (d.getDate() < day) d.setDate(0);
+  return d;
+}
+function calc() {
+  const depot = num(S.logement.depot);
+  const total = S.retenues.reduce((a, r) => a + num(r.montant), 0);
+  const worse = S.pieces.some(r => r.elements.some(isWorse));
+  const mois = (S.conforme === "non" || worse) ? 2 : 1;
+  const lim = addMonths(S.dateCles || S.date, mois);
+  return { depot, total, reste:Math.max(0, depot - total), mois, lim };
+}
+function penalite() {
+  const c = calc();
+  if (!c.lim || !num(S.logement.loyer)) return 0;
+  const today = new Date();
+  if (today <= c.lim) return 0;
+  const mois = Math.ceil((today - c.lim) / (30.44 * 864e5));
+  return num(S.logement.loyer) * 0.10 * mois;
+}
+function renderTotals() {
+  const el = document.getElementById("totals"); if (!el) return;
+  const c = calc();
+  el.innerHTML = `<span>Dépôt de garantie</span><span class="v">${eur(c.depot)}</span>
+    <span>Total des retenues</span><span class="v">− ${eur(c.total)}</span>
+    <span class="big">À restituer</span><span class="v big">${eur(c.reste)}</span>
+    <span>Au plus tard le (${c.mois} mois après la remise des clés)</span><span class="v">${c.lim ? pad2(c.lim.getDate()) + "/" + pad2(c.lim.getMonth() + 1) + "/" + c.lim.getFullYear() : "—"}</span>`;
+}
+function setChip(el, txt, cls) { if (!el) return; el.textContent = txt; el.className = "chip" + (cls ? " " + cls : ""); }
+function updateStatus() {
+  const q = s => document.querySelector(s);
+  const pOk = S.bailleur.nom.trim().length > 4 && S.locataires.every(l => l.nom.trim());
+  setChip(q('[data-chip="parties"]'), pOk ? "Complet" : "À compléter", pOk ? "ok" : "");
+  const lOk = S.logement.adresse.trim() && S.logement.dateEntree && S.logement.depot;
+  setChip(q('[data-chip="logement"]'), lOk ? "Complet" : "À compléter", lOk ? "ok" : "");
+  const cf = c => isEntry() ? c.entree !== "" : c.sortie !== ""; const cN = S.compteurs.filter(cf).length;
+  setChip(q('[data-chip="compteurs"]'), cN + "/" + S.compteurs.length, cN === S.compteurs.length && cN ? "ok" : "");
+  const kN = S.cles.filter(cf).length;
+  const kBad = !isEntry() && S.cles.some(c => c.sortie !== "" && c.entree !== "" && num(c.sortie) < num(c.entree));
+  setChip(q('[data-chip="cles"]'), kBad ? "Clé manquante" : kN + "/" + S.cles.length, kBad ? "bad" : (kN === S.cles.length && kN ? "ok" : ""));
+  let tot = 0, done = 0;
+  S.pieces.forEach((r, i) => {
+    const n = r.elements.length, d = r.elements.filter(e => stateOf(e)).length, w = r.elements.filter(isWorse).length;
+    tot += n; done += d;
+    setChip(q(`[data-roomchip="${i}"]`), w ? w + " écart" + (w > 1 ? "s" : "") : d + "/" + n, w ? "bad" : (d === n && n ? "ok" : ""));
+  });
+  S.pieces.forEach((r, i) => {
+    const b = document.querySelector(`[data-rn="${i}"]`); if (!b) return;
+    const n = r.elements.length, d = r.elements.filter(e => stateOf(e)).length, w = r.elements.filter(isWorse).length;
+    b.className = "rn" + (w ? " bad" : d === n && n ? " ok" : d ? " part" : "");
+  });
+  const nd = degraded().length;
+  setChip(q('[data-chip="pieces"]'), nd ? nd + " écart" + (nd > 1 ? "s" : "") : done + "/" + tot, nd ? "bad" : (done === tot && tot ? "ok" : ""));
+  if (isEntry()) setChip(q('[data-chip="retenues"]'), S.logement.depot ? "OK" : "", S.logement.depot ? "ok" : "");
+  else setChip(q('[data-chip="retenues"]'), S.conforme === "oui" ? "Conforme" : S.conforme === "non" ? S.retenues.length + " retenue" + (S.retenues.length > 1 ? "s" : "") : "À conclure", S.conforme === "oui" ? "ok" : S.conforme === "non" ? "bad" : "");
+  updateBar(done, tot, nd);
+}
+let lastBar = [0, 0, 0];
+function updateBar(done, tot, nd) {
+  if (done === undefined) [done, tot, nd] = lastBar; else lastBar = [done, tot, nd];
+  const t = document.getElementById("barTxt"); if (!t) return;
+  const dot = document.getElementById("saveDot"); if (dot) dot.className = "dot " + (saveState === "…" ? "pending" : saveOk ? "ok" : "err");
+  t.innerHTML = S.readonly ? `<b>Document en lecture seule</b> · ${esc(S.date)}`
+    : S.locked ? `<b>Signé et clôturé</b> · ${esc(fmtDT(S.clotureAt))}`
+    : `<b>${done}/${tot}</b> éléments notés · <b>${nd}</b> écart${nd > 1 ? "s" : ""}${saveState ? " · " + esc(saveState) : ""}`;
+  document.getElementById("meterFill").style.width = (tot ? Math.round(done / tot * 100) : 0) + "%";
+}
+
+const pads = {};
+function locNames() { return S.locataires.map(l => l.nom).filter(Boolean).join(", ") || "Nom du locataire à renseigner"; }
+function renderSigs() {
+  const el = document.getElementById("sigs");
+  const parties = [["bailleur", "Pour le bailleur", (S.bailleur.nom.trim() || "SCI") + (S.bailleur.representant ? ", représentée par " + S.bailleur.representant + " (" + S.bailleur.qualite + ")" : "")], ["locataire", "Le(s) locataire(s)", locNames()]];
+  el.innerHTML = `<div class="sig-head"><span class="num">7</span>Signatures</div>
+    <div id="lockBanner"></div>
+    <div class="pads">${parties.map(([p, t, n]) => `<div class="pad-card"><div class="pad-title">${t}</div><div class="pad-sub" data-signame="${p}">${esc(n)}</div>
+      <label class="chk"><input type="checkbox" id="f-lu-${p}" data-k="sig.lu.${p}"${S.sig.lu[p] ? " checked" : ""}> Certifié exact, lu et approuvé</label>
+      <canvas data-pad="${p}" aria-label="Zone de signature ${t}"></canvas>
+      <div class="pad-foot"><span data-sigat="${p}"></span><button type="button" class="btn ghost" data-act="clearSig" data-p="${p}">Effacer</button></div></div>`).join("")}</div>
+    <label class="fld"><span>Remise de l'exemplaire du locataire</span><select id="f-remise" data-k="remise">${[["auto", GAS ? "Envoi automatique par e-mail à la clôture (PDF joint)" : "Partage automatique via Google Drive à la clôture"], ["mail", "Envoi par e-mail par le bailleur le jour même"], ["main", "Remise en main propre d'un exemplaire imprimé"]].map(([a, b]) => `<option value="${a}"${(S.remise || "auto") === a ? " selected" : ""}>${b}</option>`).join("")}</select></label>
+    <div class="actions"><button type="button" class="btn primary" data-act="final" id="btnFinal">Clôturer, signer et envoyer sur le Drive</button><button type="button" class="btn ghost" data-act="preview">Aperçu</button><button type="button" class="btn ghost" data-act="draft">PDF brouillon</button></div>
+    <div id="checkPanel" class="check" role="alert" hidden></div>
+    <p id="msg" role="status"></p><p id="driveMsg" role="status"></p>
+    ${note(`<ul><li>Signature électronique simple au sens de l'article 1367 du Code civil. Le document est horodaté, hashé (SHA-256), et toute modification postérieure à une signature efface automatiquement les signatures.</li><li>La case « Certifié exact, lu et approuvé » est un élément de preuve du consentement éclairé.</li><li>À la clôture, le PDF signé part dans le dossier « États des lieux » du Google Drive, avec un JSON d'archive et le registre RGPD.</li><li>Garde le PDF au moins 3 ans après la restitution du dépôt (art. 7-1 de la loi de 1989).</li><li>Si l'état des lieux ne peut pas être établi à l'amiable : un commissaire de justice établit l'état des lieux, frais partagés par moitié.</li></ul>`)}`;
+  ["bailleur", "locataire"].forEach(p => setupPad(el.querySelector(`canvas[data-pad="${p}"]`), p));
+  updateSigInfo();
+}
+function updateSigInfo() {
+  ["bailleur", "locataire"].forEach(p => {
+    const s = document.querySelector(`[data-sigat="${p}"]`);
+    if (s) s.textContent = S.sig[p] ? "Signé le " + fmtDT(S.sig[p + "At"]) : "Signe dans le cadre avec le doigt";
+  });
+  const nb = document.querySelector('[data-signame="bailleur"]'); if (nb) nb.textContent = (S.bailleur.nom.trim() || "SCI") + (S.bailleur.representant ? ", représentée par " + S.bailleur.representant + " (" + S.bailleur.qualite + ")" : "");
+  const nl = document.querySelector('[data-signame="locataire"]'); if (nl) nl.textContent = locNames();
+}
+function setupPad(cv, p) {
+  const ctx = cv.getContext("2d");
+  const draw = () => {
+    const r = cv.getBoundingClientRect(); if (!r.width) return;
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.lineWidth = 2.3; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.strokeStyle = "#14305c"; ctx.fillStyle = "#14305c";
+    ctx.save(); ctx.strokeStyle = "#c9d2de"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(16, r.height - 30); ctx.lineTo(r.width - 16, r.height - 30); ctx.stroke(); ctx.restore();
+    if (S.sig[p]) {
+      const src = S.sig[p]; const im = new Image();
+      im.onload = () => { if (S.sig[p] !== src) return; const sc = Math.min(r.width / im.width, r.height / im.height); ctx.drawImage(im, 0, 0, im.width * sc, im.height * sc); };
+      im.src = src;
+    }
+  };
+  pads[p] = draw; draw();
+  try { new ResizeObserver(() => draw()).observe(cv); } catch (e) {}
+  let drawing = false, last = null, dirty = false;
+  const pt = e => { const r = cv.getBoundingClientRect(); return { x:e.clientX - r.left, y:e.clientY - r.top }; };
+  cv.addEventListener("pointerdown", e => { if (S.locked || S.readonly) return; e.preventDefault(); drawing = true; dirty = true; try { cv.setPointerCapture(e.pointerId); } catch (_) {} last = pt(e); ctx.beginPath(); ctx.arc(last.x, last.y, 1.1, 0, Math.PI * 2); ctx.fill(); });
+  cv.addEventListener("pointermove", e => { if (!drawing) return; const q = pt(e); ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(q.x, q.y); ctx.stroke(); last = q; });
+  const end = () => { if (!drawing) return; drawing = false; if (dirty) { S.sig[p] = cv.toDataURL("image/png"); S.sig[p + "At"] = new Date().toISOString(); dirty = false; scheduleSave(); updateSigInfo(); } };
+  cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end); cv.addEventListener("pointerleave", end);
+}
+function invalidateSigs() {
+  if (S.locked || S.readonly) return;
+  if (S.sig.bailleur || S.sig.locataire) {
+    S.sig.bailleur = S.sig.locataire = null; S.sig.bailleurAt = S.sig.locataireAt = null;
+    S.sig.lu = { bailleur:false, locataire:false };
+    Object.values(pads).forEach(d => d());
+    ["bailleur", "locataire"].forEach(p => { const cb = document.getElementById("f-lu-" + p); if (cb) cb.checked = false; });
+    updateSigInfo(); hideCheck();
+    msg("Contenu modifié : les deux signatures ont été effacées. Faites re-signer les deux parties avant de clôturer.", true);
+  }
+}
+function applyLock() {
+  const ro = S.locked || S.readonly;
+  const fs = document.getElementById("form"); if (fs) fs.disabled = !!ro;
+  document.querySelectorAll("#sigs input,#sigs select,#sigs [data-act='clearSig'],#btnFinal").forEach(x => x.disabled = !!ro);
+  const b = document.getElementById("lockBanner");
+  if (b) {
+    if (S.readonly) b.innerHTML = `<div class="banner" style="background:color-mix(in srgb,var(--muted) 15%,var(--card));color:var(--muted)">Document ouvert en lecture seule.</div>`;
+    else if (S.locked) b.innerHTML = `<div class="banner">Document signé et clôturé le ${esc(fmtDT(S.clotureAt))}. Il ne peut plus être modifié.${S.driveAt ? " Envoyé sur le Drive le " + esc(fmtDT(S.driveAt)) + "." : ""}</div>
+      <div class="actions" style="margin-top:8px"><button type="button" class="btn primary" data-act="drive">Envoyer sur le Drive</button><button type="button" class="btn ghost" data-act="signedPdf">Enregistrer sur le téléphone</button><button type="button" class="btn ghost" data-act="exportZip">Exporter le dossier (ZIP)</button>${S.driveUrl ? `<a class="btn ghost" href="${esc(S.driveUrl)}" target="_blank" rel="noopener">Voir dans le Drive</a>` : ""}<button type="button" class="btn danger" data-act="reopen">Rouvrir (efface les signatures)</button></div>`;
+    else b.innerHTML = "";
+  }
+}
+let msgT = null;
+function msg(t, err) { const m = document.getElementById("msg"); if (!m) return; m.textContent = t; m.className = err ? "err" : ""; clearTimeout(msgT); msgT = setTimeout(() => { m.textContent = ""; }, 9000); }
+
+function parseArchName(n) {
+  const m = (n || "").match(/EDL-(entree|sortie)-(\d{4}-\d{2}-\d{2})-(.+?)(?:-brouillon)?\.json$/i);
+  return m ? { type:m[1].toLowerCase(), date:m[2], slug:m[3] } : { type:"", date:"", slug:n };
+}
+async function histFetch() {
+  if (GAS) return await new Promise((res, rej) => { google.script.run.withSuccessHandler(res).withFailureHandler(e => rej(e)).listArchives(); });
+  if (WEB) { const out = await jsonp({ action: "list" }); return Array.isArray(out) ? out : []; }
+  let mcp = null; try { mcp = window.claude && window.claude.use ? await window.claude.use("mcp") : null; } catch (_) { mcp = null; }
+  if (!mcp) throw new Error("nomcp");
+  const r = await mcp.callTool("Google Drive", "search_files", { query:"parentId = '" + CFG.driveDataFolder + "'" });
+  const files = (r && r.payload && (r.payload.files || r.payload)) || [];
+  return files.map(f => { const pa = parseArchName(f.title || f.name); return { id:f.id, name:f.title || f.name, type:pa.type, date:pa.date, apt:pa.slug, tenant:"", when:f.modifiedTime || "" }; });
+}
+async function histGetJson(id) {
+  if (GAS) return await new Promise((res, rej) => { google.script.run.withSuccessHandler(res).withFailureHandler(e => rej(e)).getArchive(id); });
+  if (WEB) { return await jsonp({ action: "get", id: id }); }
+  const mcp = await window.claude.use("mcp");
+  const r = await mcp.callTool("Google Drive", "download_file_content", { fileId:id });
+  let c = r && r.payload;
+  if (c && typeof c === "object") c = c.content || c.data || c.text || "";
+  return b64ToUtf8(c);
+}
+async function openHist() {
+  const el = document.getElementById("histPanel"); el.hidden = false;
+  el.innerHTML = `<div class="hist-head"><b>Historique des états des lieux</b><button type="button" class="x" data-act="closeHist" aria-label="Fermer">×</button></div><p class="pad-sub">Chargement…</p>`;
+  let list;
+  try { list = await histFetch(); }
+  catch (e) {
+    el.innerHTML = `<div class="hist-head"><b>Historique</b><button type="button" class="x" data-act="closeHist">×</button></div><p class="pad-sub err">${(e && e.message) === "nomcp" ? "Connecte Google Drive pour accéder à l'historique." : "Lecture impossible : " + ((e && e.message) || "erreur")}</p>`;
+    return;
+  }
+  list.sort((a, b) => (b.date + b.name).localeCompare(a.date + a.name));
+  const rows = list.length ? list.map(a => `<div class="hist-item"><div class="hi-t"><span class="tag ${a.type}">${a.type === "entree" ? "Entrée" : a.type === "sortie" ? "Sortie" : "?"}</span> <b>${esc(a.apt)}</b> · ${esc(fmtDate(a.date) || a.date)}</div>
+    <div class="actions"><button type="button" class="btn ghost sm" data-act="histOpen" data-id="${esc(a.id)}">Ouvrir (lecture)</button>${a.type === "entree" ? `<button type="button" class="btn sm" data-act="histSortie" data-id="${esc(a.id)}">Faire l'état de sortie</button>` : ""}</div></div>`).join("") : `<p class="pad-sub">Aucun état des lieux archivé.</p>`;
+  el.innerHTML = `<div class="hist-head"><b>Historique</b><button type="button" class="x" data-act="closeHist" aria-label="Fermer">×</button></div><p class="pad-sub">Ouvrir remplace la saisie en cours.</p>${rows}`;
+}
+function clearForSortie(st) {
+  st.typeEdl = "sortie"; const now = new Date();
+  st.date = isoDate(now); st.dateCles = isoDate(now); st.heureDebut = hhmm(now); st.heureFin = "";
+  st.clotureAt = null; st.locked = false; st.readonly = false;
+  st.sig = { bailleur:null, locataire:null, bailleurAt:null, locataireAt:null, lu:{ bailleur:false, locataire:false } };
+  st.driveUrl = null; st.driveAt = null; st.conforme = ""; st.retenues = []; st.obsLoc = ""; st.obsBail = "";
+  st.pieces.forEach(r => { r.photos = []; r.elements.forEach(e => { e.sortie = ""; e.obs = ""; e.photos = []; }); });
+  st.compteurs.forEach(c => { c.sortie = ""; c.photos = []; }); st.compteursPhotos = [];
+  st.cles.forEach(c => { c.sortie = ""; c.obs = ""; });
+  return st;
+}
+async function histLoad(id, makeSortie) {
+  const el = document.getElementById("histPanel"); const old = el.innerHTML;
+  el.innerHTML += '<p class="pad-sub">Ouverture…</p>';
+  let obj;
+  try { const j = await histGetJson(id); obj = normalize(JSON.parse(j)); }
+  catch (e) { el.innerHTML = old; msg("Ouverture impossible : " + ((e && e.message) || "erreur"), true); return; }
+  if (makeSortie) { S = clearForSortie(obj); msg("État de sortie préparé à partir de l'entrée."); }
+  else { S = obj; S.locked = true; S.readonly = true; msg("Document ouvert en lecture seule."); }
+  el.hidden = true; render(); renderSigs(); window.scrollTo(0, 0); scheduleSave();
+}
+
+document.addEventListener("input", e => {
+  const el = e.target;
+  if (el.id === "roomSearch") { filterRooms(el.value); return; }
+  const k = el.dataset && el.dataset.k; if (!k) return;
+  const v = el.type === "checkbox" ? el.checked : el.value;
+  setPath(S, k, v);
+  if (el.tagName === "SELECT") el.dataset.v = v;
+  if (el.classList && el.classList.contains("mat-sel")) el.dataset.empty = v ? "0" : "1";
+  if (!/^(sig\.|sendMail|remise)/.test(k)) invalidateSigs();
+  scheduleSave();
+  let m = k.match(/^pieces\.(\d+)\.elements\.(\d+)\.(entree|sortie)$/);
+  if (m) { const row = document.querySelector(`[data-row="${m[1]}.${m[2]}"]`); if (row) row.classList.toggle("worse", !!isWorse(S.pieces[+m[1]].elements[+m[2]])); renderDegr(); renderTotals(); }
+  m = k.match(/^pieces\.(\d+)\.nom$/); if (m) { const n = document.querySelector(`[data-roomname="${m[1]}"]`); if (n) n.textContent = v; }
+  m = k.match(/^pieces\.(\d+)\.elements\.(\d+)\.label$/);
+  if (m) {
+    const ri = +m[1], ei = +m[2], e = S.pieces[ri].elements[ei];
+    const newList = matsFor(e.label);
+    if (e.materiau && !newList.includes(e.materiau)) e.materiau = "";
+    const row = document.querySelector(`[data-row="${ri}.${ei}"]`);
+    if (row) {
+      const oldMat = row.querySelector(".mat-line");
+      if (oldMat) oldMat.remove();
+      const newMat = matHtml(ri, ei, e);
+      if (newMat) row.querySelector(".row-top").insertAdjacentHTML("afterend", newMat);
+    }
+  }
+  m = k.match(/^cles\.(\d+)\./); if (m) { const c = S.cles[+m[1]]; const row = document.querySelector(`[data-cle="${m[1]}"]`); if (row) row.classList.toggle("worse", c.sortie !== "" && c.entree !== "" && num(c.sortie) < num(c.entree)); }
+  m = k.match(/^retenues\.(\d+)\.(cout|grille|pose)$/); if (m) { const r = S.retenues[+m[1]]; retAuto(r); const mi = document.getElementById(`f-retenues-${m[1]}-montant`); if (mi) mi.value = r.montant; const vi = document.querySelector(`[data-vet="${m[1]}"]`); if (vi) vi.innerHTML = retInfo(r); }
+  if (/^(logement\.dateEntree|dateCles|date)$/.test(k)) { S.retenues.forEach(retAuto); }
+  if (/^(retenues|logement\.depot|date|dateCles|conforme|logement\.dateEntree|logement\.loyer)/.test(k)) renderTotals();
+  if (/^(bailleur|locataires)/.test(k)) updateSigInfo();
+  updateStatus();
+});
+function filterRooms(q) {
+  const s = (q || "").trim().toLowerCase();
+  document.querySelectorAll("details.room").forEach(d => {
+    const n = (d.querySelector(".room-name")?.textContent || "").toLowerCase();
+    d.style.display = s && !n.includes(s) ? "none" : "";
+  });
+}
+document.addEventListener("change", async e => {
+  const el = e.target;
+  if (!el.dataset || !el.dataset.photo || !el.files || !el.files.length) return;
+  const path = el.dataset.photo;
+  let arr = getPath(S, path);
+  if (!Array.isArray(arr)) { arr = []; setPath(S, path, arr); }
+  for (const file of el.files) { try { arr.push({ data:await resizeImg(file), at:new Date().toISOString() }); } catch (_) {} }
+  el.value = ""; invalidateSigs(); scheduleSave(); render();
+});
+document.addEventListener("toggle", e => {
+  const d = e.target;
+  if (d && d.dataset && d.dataset.oid) { d.open ? openSet.add(d.dataset.oid) : openSet.delete(d.dataset.oid); }
+}, true);
+
+function armed(b, label) {
+  if (b.dataset.armed) return true;
+  b.dataset.armed = "1";
+  const old = b.textContent;
+  b.textContent = label;
+  setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = old; } }, 4000);
+  return false;
+}
+
+let busy = false;
+document.addEventListener("click", async e => {
+  const img = e.target.closest("img[data-act='blurPhoto']");
+  if (img) { openPhotoEditor(img.dataset.p, +img.dataset.i); return; }
+  const b = e.target.closest("[data-act]");
+  if (!b || b.disabled) return;
+  if (busy && /^(draft|signedPdf|drive|final|forceGen|preview|exportZip)$/.test(b.dataset.act)) { msg("Opération en cours…"); return; }
+  const a = b.dataset.act, i = +b.dataset.i, j = +b.dataset.j;
+  let struct = true;
+  switch (a) {
+    case "addLoc": S.locataires.push({ nom:"", adresse:"", tel:"", email:"" }); break;
+    case "delLoc": S.locataires.splice(i, 1); break;
+    case "addCpt": S.compteurs.push({ label:"Autre compteur", unite:"", numero:"", entree:"", sortie:"", photos:[] }); break;
+    case "delCpt": if (!armed(b, "✓")) return; S.compteurs.splice(i, 1); break;
+    case "addCle": S.cles.push({ label:"Autre", entree:"", sortie:"", obs:"" }); break;
+    case "delCle": S.cles.splice(i, 1); break;
+    case "addRoom": { const t = document.getElementById("newRoomType").value; const n = document.getElementById("newRoomName").value.trim() || ROOM_TYPES.find(x => x[0] === t)[1]; const r = mkRoom(n, t); S.pieces.push(r); openSet.add("r" + r.id); break; }
+    case "delRoom": if (!armed(b, "Confirmer la suppression")) return; S.pieces.splice(i, 1); break;
+    case "allB": S.pieces[i].elements.forEach(x => { if (!x.entree) x.entree = "B"; }); break;
+    case "allN": S.pieces[i].elements.forEach(x => { if (!x.entree) x.entree = "B"; }); break;
+    case "setType": {
+      const t = b.dataset.t; if (t === S.typeEdl) return;
+      const work = S.sig.bailleur || S.sig.locataire || S.retenues.length || S.pieces.some(r => (r.photos || []).length || r.elements.some(e => e.sortie || e.obs || (e.photos || []).length)) || S.compteurs.some(c => c.sortie || (c.photos || []).length);
+      if (work && !armed(b, "Confirmer : changer efface la saisie")) return;
+      const apt = S.apt; S = freshState(); S.apt = apt; applyApt(apt); S.typeEdl = t;
+      if (t === "entree") { S.pieces.forEach(r => r.elements.forEach(e => e.entree = "")); S.compteurs.forEach(c => c.entree = ""); S.cles.forEach(c => c.entree = ""); }
+      scheduleSave(); render(); renderSigs(); window.scrollTo(0, 0); return;
+    }
+    case "openHist": struct = false; await openHist(); return;
+    case "closeHist": struct = false; document.getElementById("histPanel").hidden = true; return;
+    case "histOpen": struct = false; await histLoad(b.dataset.id, false); return;
+    case "histSortie": struct = false; await histLoad(b.dataset.id, true); return;
+    case "copy": S.pieces[i].elements.forEach(x => { if (!x.sortie && x.entree) x.sortie = x.entree; }); break;
+    case "addEl": S.pieces[i].elements.push({ label:"Nouvel élément", materiau:"", entree:"", sortie:"", obs:"", photos:[] }); break;
+    case "delEl": if (!armed(b, "✓")) return; S.pieces[i].elements.splice(j, 1); break;
+    case "delPhoto": getPath(S, b.dataset.p).splice(i, 1); break;
+    case "toRet": {
+      const r = S.pieces[i], x = r.elements[j];
+      const elemLabel = r.nom + " · " + x.label + (x.materiau ? " (" + x.materiau + ")" : "");
+      S.retenues.push({ element:elemLabel, degradation:x.obs, montant:"", justif:"", grille:guessGrid(x.label, x.materiau), pose:"", cout:"" });
+      if (S.conforme !== "non") S.conforme = "non";
+      openSet.add("retenues"); break;
+    }
+    case "addRet": S.retenues.push({ element:"", degradation:"", montant:"", justif:"", grille:"", pose:"", cout:"" }); break;
+    case "delRet": S.retenues.splice(i, 1); break;
+    case "clearSig": { const p = b.dataset.p; S.sig[p] = null; S.sig[p + "At"] = null; pads[p] && pads[p](); updateSigInfo(); scheduleSave(); return; }
+    case "setEtat": {
+      const k = b.dataset.k, v = b.dataset.v;
+      const cur = getPath(S, k); const nv = cur === v ? "" : v; setPath(S, k, nv);
+      b.parentElement.querySelectorAll(".seg-b").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.v === nv)));
+      const m = k.match(/^pieces\.(\d+)\.elements\.(\d+)\./);
+      if (m) {
+        const ri = +m[1], ej = +m[2], e = S.pieces[ri].elements[ej];
+        const row = document.querySelector(`[data-row="${ri}.${ej}"]`);
+        if (row) { row.classList.toggle("worse", !!isWorse(e)); if (rowExpanded(e)) row.classList.add("exp"); const mo = row.querySelector(".more"); const sg = mo && mo.querySelector(".sugg"); const nh = suggHtml(ri, ej, e); if (sg) sg.outerHTML = nh || ""; else if (nh && mo) mo.insertAdjacentHTML("afterbegin", nh); row.classList.remove("flash"); void row.offsetWidth; row.classList.add("flash"); }
+      }
+      try { navigator.vibrate && navigator.vibrate(8); } catch (_) {}
+      invalidateSigs(); scheduleSave(); renderDegr(); renderTotals(); updateStatus(); return;
+    }
+    case "expand": { const row = document.querySelector(`[data-row="${i}.${j}"]`); if (row) { row.classList.add("exp"); const o = row.querySelector(".obs"); o && o.focus(); } return; }
+    case "sugg": {
+      const e = S.pieces[i].elements[j]; const t = b.dataset.t;
+      e.obs = e.obs && e.obs.trim() ? e.obs.replace(/\s*$/, "") + ", " + t.toLowerCase() : t;
+      const o = document.getElementById(`f-p${i}-e${j}-o`); if (o) { o.value = e.obs; o.focus(); }
+      invalidateSigs(); scheduleSave(); renderDegr(); return;
+    }
+    case "gotoRoom": {
+      S.pieces.forEach(r => openSet.delete("r" + r.id));
+      const r = S.pieces[i]; openSet.add("r" + r.id);
+      document.querySelectorAll("details.room").forEach(d => { d.open = d.dataset.oid === "r" + r.id; });
+      const d = document.querySelector(`[data-oid="r${r.id}"]`); d && d.scrollIntoView({ behavior:"smooth", block:"start" });
+      return;
+    }
+    case "nextRoom": {
+      const cur = S.pieces[i]; openSet.delete("r" + cur.id);
+      const dc = document.querySelector(`[data-oid="r${cur.id}"]`); if (dc) dc.open = false;
+      if (i + 1 < S.pieces.length) { const nx = S.pieces[i + 1]; openSet.add("r" + nx.id); const dn = document.querySelector(`[data-oid="r${nx.id}"]`); if (dn) { dn.open = true; dn.scrollIntoView({ behavior:"smooth", block:"start" }); } }
+      else { openSet.add("retenues"); const dr = document.querySelector('[data-oid="retenues"]'); if (dr) { dr.open = true; dr.scrollIntoView({ behavior:"smooth", block:"start" }); } }
+      updateStatus(); return;
+    }
+    case "preview": struct = false; await previewPdf(true); return;
+    case "draft": struct = false; if (!showCheck("draft")) return; await exportPdf(true); return;
+    case "signedPdf": struct = false; await exportPdf(false); return;
+    case "drive": struct = false; await exportPdf(false, "only"); return;
+    case "final": { if (!showCheck("final")) return; await finalize(); return; }
+    case "forceGen": { hideCheck(); if (b.dataset.kind === "final") await finalize(); else await exportPdf(true); return; }
+    case "hideCheck": hideCheck(); return;
+    case "goto": { const sec = b.dataset.sec; openSet.add(sec); const d = document.querySelector(`[data-oid="${sec}"]`); if (d) { d.open = true; d.scrollIntoView({ behavior:"smooth", block:"start" }); } return; }
+    case "openRecap": struct = false; openRecap(); return;
+    case "closeRecap": struct = false; closeModal(); return;
+    case "closePhoto": struct = false; closeModal(); return;
+    case "applyBlur": struct = false; await applyBlur(b); return;
+    case "exportZip": struct = false; await exportZip(); return;
+    case "reopen": {
+      if (!(await ensureAdmin())) { msg("Réouverture réservée au gérant de la SCI (code administrateur requis).", true); return; }
+      if (!armed(b, "Confirmer : rouvrir")) return;
+      S.locked = false; S.readonly = false; S.clotureAt = null;
+      S.sig.bailleur = S.sig.locataire = null; S.sig.bailleurAt = S.sig.locataireAt = null;
+      scheduleSave(); render(); Object.values(pads).forEach(d => d()); updateSigInfo(); return;
+    }
+    case "loadApt": {
+      const key = document.getElementById("aptSel").value;
+      if (hasWork() && !armed(b, "Confirmer : remplacer les saisies")) return;
+      applyApt(key); invalidateSigs(); scheduleSave(); render(); renderSigs();
+      msg("Logement chargé : " + APTS[key].label + "."); window.scrollTo(0, 0); return;
+    }
+    case "pushApp": {
+      const am = document.getElementById("adminMsg"); am.textContent = "Envoi…";
+      try {
+        const resp = await fetch("app.html"); if (!resp.ok) throw new Error("fichier introuvable");
+        const html = await resp.text();
+        const mcp = await window.claude.use("mcp"); if (!mcp) throw new Error("Google Drive indisponible");
+        await mcp.callTool("Google Drive", "create_file", { title:"edl-app.html", textContent:html, contentMimeType:"text/html", disableConversionToGoogleType:true, parentId:CFG.driveAppFolder });
+        am.textContent = "Version " + APP_VERSION + " envoyée.";
+      } catch (e) { am.textContent = "Échec : " + ((e && (e.message || e.code)) || "erreur"); }
+      return;
+    }
+    case "reset":
+      if (S.locked && !S.driveAt) { msg("Ce document signé n'a pas été envoyé sur le Drive. Envoie-le avant.", true); return; }
+      if (!armed(b, "Confirmer : tout effacer")) return;
+      S = freshState(); scheduleSave(); render(); renderSigs(); window.scrollTo(0, 0); return;
+    default: return;
+  }
+  if (struct) { invalidateSigs(); scheduleSave(); render(); }
+});
+
+function resizeImg(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file); const img = new Image();
+    img.onload = () => {
+      const max = 1400; let w = img.naturalWidth, h = img.naturalHeight;
+      const s = Math.min(1, max / Math.max(w, h)); w = Math.round(w * s); h = Math.round(h * s);
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      const x = c.getContext("2d"); x.fillStyle = "#ffffff"; x.fillRect(0, 0, w, h); x.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL("image/jpeg", 0.72));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("image")); };
+    img.src = url;
+  });
+}
+
+function checkIssues(final) {
+  const block = [], warn = []; const add = (arr, t, sec) => arr.push({ t, sec });
+  if (isEntry()) {
+    if (S.bailleur.nom.trim().length < 5) add(block, "Nom de la SCI manquant", "parties");
+    S.locataires.forEach((l, i) => { if (!l.nom.trim()) add(block, "Nom du locataire " + (i + 1) + " manquant", "parties"); });
+    if (!S.bailleur.representant.trim()) add(warn, "Représentant de la SCI non choisi", "parties");
+    if (!S.logement.depot) add(warn, "Montant du dépôt de garantie manquant", "logement");
+    const cm = S.compteurs.filter(c => c.entree === ""); if (cm.length) add(warn, cm.length + " relevé(s) manquant(s)", "compteurs");
+    const cp = S.compteurs.filter(c => c.entree !== "" && !(c.photos || []).length); if (cp.length) add(warn, cp.length + " compteur(s) sans photo", "compteurs");
+    let nn = 0; S.pieces.forEach(r => r.elements.forEach(e => { if (!e.entree) nn++; })); if (nn) add(warn, nn + " élément(s) sans état", "pieces");
+    if (final) {
+      if (!S.sig.bailleur) add(block, "Signature du bailleur manquante", "sign");
+      if (!S.sig.locataire) add(block, "Signature du locataire manquante", "sign");
+      if (!S.sig.lu.bailleur || !S.sig.lu.locataire) add(block, "Case « Certifié exact » à cocher", "sign");
+      if ((S.remise || "auto") === "auto" && !tenantEmails().length) add(block, "E-mail valide du locataire requis", "parties");
+    }
+    return { block, warn };
+  }
+  if (S.bailleur.nom.trim().length < 5) add(block, "Nom de la SCI manquant", "parties");
+  S.locataires.forEach((l, i) => {
+    if (!l.nom.trim()) add(block, "Nom du locataire " + (i + 1) + " manquant", "parties");
+    if (!l.adresse.trim()) add(warn, "Nouvelle adresse du locataire " + (i + 1) + " manquante", "parties");
+  });
+  if (!S.bailleur.representant.trim()) add(warn, "Nom du représentant de la SCI manquant", "parties");
+  if (!S.logement.dateEntree) add(warn, "Date de l'état des lieux d'entrée manquante", "logement");
+  if (!S.logement.depot) add(warn, "Montant du dépôt de garantie manquant", "logement");
+  const cm = S.compteurs.filter(c => c.sortie === ""); if (cm.length) add(warn, cm.length + " compteur(s) sans index sortie", "compteurs");
+  const cp = S.compteurs.filter(c => c.sortie !== "" && !(c.photos || []).length); if (cp.length) add(warn, cp.length + " compteur(s) sans photo", "compteurs");
+  const km = S.cles.filter(c => c.sortie === ""); if (km.length) add(warn, km.length + " type(s) de clés sans nombre rendu", "cles");
+  const kb = S.cles.filter(c => c.sortie !== "" && c.entree !== "" && num(c.sortie) < num(c.entree)); if (kb.length) add(warn, "Clés manquantes", "cles");
+  let nn = 0; S.pieces.forEach(r => r.elements.forEach(e => { if (!e.sortie) nn++; })); if (nn) add(warn, nn + " élément(s) sans état de sortie", "pieces");
+  const d = degraded();
+  const dObs = d.filter(x => !x.e.obs.trim()), dPh = d.filter(x => !(x.e.photos || []).length);
+  if (dObs.length) add(warn, dObs.length + " écart(s) sans description", "pieces");
+  if (dPh.length) add(warn, dPh.length + " écart(s) sans photo", "pieces");
+  if (!S.conforme) add(warn, "Conclusion non choisie", "retenues");
+  const nw = S.pieces.reduce((a, r) => a + r.elements.filter(isWorse).length, 0);
+  if (S.conforme === "oui" && nw) add(warn, "Conclusion « conforme » alors que " + nw + " élément(s) sont moins bons", "retenues");
+  const rm = S.retenues.filter(r => !num(r.montant)); if (rm.length) add(warn, rm.length + " retenue(s) sans montant", "retenues");
+  if (final) {
+    if (!S.sig.bailleur) add(block, "Signature du bailleur manquante", "sign");
+    if (!S.sig.locataire) add(block, "Signature du locataire manquante", "sign");
+    if (!S.sig.lu.bailleur || !S.sig.lu.locataire) add(block, "Case « Certifié exact » à cocher", "sign");
+    if ((S.remise || "auto") === "auto" && !tenantEmails().length) add(block, "E-mail valide du locataire requis", "parties");
+  }
+  return { block, warn };
+}
+function hideCheck() { const c = document.getElementById("checkPanel"); if (c) { c.hidden = true; c.innerHTML = ""; } }
+function showCheck(kind) {
+  const { block, warn } = checkIssues(kind === "final");
+  if (!block.length && !warn.length) { hideCheck(); return true; }
+  const c = document.getElementById("checkPanel"); if (!c) return true;
+  const li = x => `<li><span>${esc(x.t)}</span>${x.sec !== "sign" ? `<button type="button" class="linkbtn" data-act="goto" data-sec="${x.sec}">Corriger</button>` : ""}</li>`;
+  c.innerHTML = `<div class="check-title">${block.length ? "Impossible de générer le PDF signé" : "Attention : des points restent à vérifier"}</div>
+    ${block.length ? `<div class="check-sub">À faire obligatoirement :</div><ul>${block.map(li).join("")}</ul>` : ""}
+    ${warn.length ? `<div class="check-sub">${block.length ? "À vérifier aussi :" : "Points à vérifier (" + warn.length + ") :"}</div><ul>${warn.map(li).join("")}</ul>` : ""}
+    <div class="actions">${block.length ? "" : `<button type="button" class="btn danger solid" data-act="forceGen" data-kind="${kind}">${kind === "final" ? "Clôturer quand même" : "Générer quand même"}</button>`}<button type="button" class="btn ghost" data-act="hideCheck">${block.length ? "Fermer" : "Annuler et corriger"}</button></div>`;
+  c.hidden = false; c.scrollIntoView({ behavior:"smooth", block:"center" });
+  return false;
+}
+async function finalize() {
+  const { block } = checkIssues(true);
+  if (block.length) { showCheck("final"); msg("Clôture annulée : " + block[0].t.toLowerCase() + ". Le document n'a pas été signé et enregistré.", true); return; }
+  const now = new Date(); S.heureFin = hhmm(now); S.clotureAt = now.toISOString(); S.locked = true;
+  scheduleSave(); applyLock(); updateBar();
+  await exportPdf(false, true);
+}
+
+const T0 = s => String(s ?? "")
+  .replace(/[’‘]/g, "'").replace(/[“”«»]/g, '"').replace(/[–—−]/g, "-").replace(/…/g, "...")
+  .replace(/€/g, "EUR").replace(/œ/g, "oe").replace(/Œ/g, "OE").replace(/³/g, "3").replace(/→/g, "->")
+  .replace(/·/g, "-").replace(/ /g, " ");
+const T = s => T0(s).replace(/[^\n\x20-\x7E\xA0-\xFF]/g, "?");
+async function sha256(str) {
+  try {
+    const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
+  } catch (e) { return ""; }
+}
+
+async function buildPdf(draft, light) {
+  if (!window.jspdf || !window.jspdf.jsPDF) throw new Error("lib");
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:"mm", format:"a4" });
+  const M = 14, W = 210, BLUE = [31, 78, 140];
+  let y = M;
+  const need = h => { if (y + h > 278) { doc.addPage(); y = M; } };
+  const title = t => { need(14); doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(...BLUE); doc.text(T(t), M, y + 4); doc.setTextColor(20); y += 7; };
+  const para = (t, size = 9) => { doc.setFont("helvetica", "normal"); doc.setFontSize(size); const lines = doc.splitTextToSize(T(t), W - 2 * M); need(lines.length * size * 0.42 + 2); doc.text(lines, M, y + 3); y += lines.length * size * 0.42 + 3; };
+  const tbl = (head, body, o = {}) => {
+    doc.autoTable(Object.assign({
+      startY:y, head:head ? [head.map(T)] : undefined, body:body.map(r => r.map(c => T(c))),
+      margin:{ left:M, right:M, bottom:18, top:M }, theme:"grid",
+      styles:{ fontSize:8.5, cellPadding:1.6, lineColor:[205, 211, 220], lineWidth:0.1, valign:"middle", textColor:20 },
+      headStyles:{ fillColor:BLUE, textColor:255, fontStyle:"bold" }
+    }, o));
+    y = doc.lastAutoTable.finalY + 6;
+  };
+
+  doc.setFont("helvetica", "bold"); doc.setFontSize(17); doc.setTextColor(20);
+  const titleMain = S.apt === "SGX-commun" ? "CONSTAT DES PARTIES COMMUNES" : (isEntry() ? "ÉTAT DES LIEUX D'ENTRÉE" : "ÉTAT DES LIEUX DE SORTIE");
+  doc.text(T(titleMain), M, y + 5);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(90);
+  doc.text(T("Établi contradictoirement - art. 3-2 de la loi n° 89-462 du 6 juillet 1989 et décret n° 2016-382 du 30 mars 2016"), M, y + 11);
+  doc.setTextColor(20); doc.setFontSize(10);
+  doc.text(T(`Date : ${fmtDate(S.date)}   Heure : de ${S.heureDebut || "..."} à ${S.heureFin || "..."}   Fait à : ${S.lieu || "..."}`), M, y + 17);
+  y += 24;
+
+  title("1. Parties");
+  const body = [["Bailleur", S.bailleur.nom + (S.bailleur.rcs ? " - RCS/SIREN " + S.bailleur.rcs : ""), "Siège : " + S.bailleur.siege, [S.bailleur.tel, S.bailleur.email].filter(Boolean).join("\n")],
+    ["Représenté par", S.bailleur.representant + (S.bailleur.qualite ? " (" + S.bailleur.qualite + ")" : ""), "", ""]];
+  S.locataires.forEach((l, i) => body.push(["Locataire" + (S.locataires.length > 1 ? " " + (i + 1) : ""), l.nom, "Nouvelle adresse : " + l.adresse, [l.tel, l.email].filter(Boolean).join("\n")]));
+  if (S.mandataire) body.push(["Mandataire du locataire (sur procuration)", S.mandataire, "Domicile : " + (S.mandataireAdresse || ""), ""]);
+  tbl(["Qualité", "Nom / dénomination", "Adresse", "Contact"], body, { columnStyles:{ 0:{ cellWidth:32, fontStyle:"bold" } } });
+
+  title("2. Logement et bail");
+  const L = S.logement;
+  tbl(null, [
+    ["Adresse", L.adresse + (L.etage ? " - " + L.etage : "")],
+    ["Type / surface", L.type + (L.surface ? " - " + L.surface + " m²" : "") + " - location " + (L.meuble === "meuble" ? "meublée" : "vide")],
+    ["Prise d'effet du bail", fmtDate(L.dateBail)],
+    ["État des lieux d'entrée", fmtDate(L.dateEntree)],
+    ["Remise des clés", fmtDate(S.dateCles)],
+    ["Grille de vétusté annexée au bail", L.grille === "oui" ? "Oui" : L.grille === "non" ? "Non" : ""],
+    ["Loyer hors charges / provision pour charges", (L.loyer ? num(L.loyer).toFixed(2) + " EUR" : "") + (L.charges ? " / " + num(L.charges).toFixed(2) + " EUR" : "")],
+    ["Dépôt de garantie versé", L.depot ? num(L.depot).toFixed(2) + " EUR" : ""],
+    ["Chauffage / eau chaude", [L.chauffage, L.eau].filter(Boolean).join(" / ")]
+  ], { columnStyles:{ 0:{ cellWidth:55, fontStyle:"bold" } } });
+
+  const photos = [];
+  const cptRefs = S.compteurs.map(c => (c.photos || []).map(p => { photos.push(["Compteur - " + c.label, p]); return photos.length; }));
+  S.compteursPhotos.forEach(p => photos.push(["Compteurs", p]));
+  const elRefs = new Map();
+  S.pieces.forEach((r, ri) => {
+    r.elements.forEach((e, ei) => {
+      const nums = [];
+      (e.photos || []).forEach(p => { photos.push([r.nom + " - " + e.label, p]); nums.push(photos.length); });
+      if (nums.length) elRefs.set(ri + "." + ei, nums);
+    });
+    r.photos.forEach(p => photos.push([r.nom + " - vue générale", p]));
+  });
+
+  title("3. Relevés des compteurs");
+  if (isEntry()) tbl(["Compteur", "N° / PDL / PCE", "Index", "Photo"], S.compteurs.map((c, ci) => [c.label + (c.unite ? " (" + c.unite + ")" : ""), c.numero, c.entree, cptRefs[ci].length ? "n° " + cptRefs[ci].join(", ") : ""]));
+  else tbl(["Compteur", "N° / PDL / PCE", "Index entrée", "Index sortie", "Photo"], S.compteurs.map((c, ci) => [c.label + (c.unite ? " (" + c.unite + ")" : ""), c.numero, c.entree, c.sortie, cptRefs[ci].length ? "n° " + cptRefs[ci].join(", ") : ""]));
+
+  title("4. Clés et accès");
+  if (isEntry()) tbl(["Type", "Nombre remis", "Observations"], S.cles.map(c => [c.label, c.entree, c.obs]), { columnStyles:{ 1:{ cellWidth:28, halign:"center" } } });
+  else tbl(["Type", "Remis à l'entrée", "Rendu à la sortie", "Observations"], S.cles.map(c => [c.label, c.entree, c.sortie, c.obs]), { columnStyles:{ 1:{ cellWidth:28, halign:"center" }, 2:{ cellWidth:28, halign:"center" } } });
+
+  title("5. État pièce par pièce");
+  para("Codes : N neuf, B bon état, U usure normale, M mauvais état, HS hors service." + (isEntry() ? "" : " Les lignes surlignées signalent un état de sortie inférieur à l'état d'entrée du " + (fmtDate(L.dateEntree) || "...") + "."), 8);
+  S.pieces.forEach((r, ri) => {
+    need(20); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text(T(r.nom), M, y + 3); y += 5;
+    const worse = new Set(); r.elements.forEach((e, k) => { if (isWorse(e)) worse.add(k); });
+    tbl(isEntry() ? ["Élément", "État", "Observations"] : ["Élément", "Entrée", "Sortie", "Observations"],
+      r.elements.map((e, ei) => {
+        const n = elRefs.get(ri + "." + ei);
+        const ph = (n ? (e.obs ? " " : "") + "(photo" + (n.length > 1 ? "s" : "") + " n° " + n.join(", ") + ")" : "");
+        const lab = e.materiau ? e.label + " (" + e.materiau + ")" : e.label;
+        return isEntry()
+          ? [lab, e.entree ? e.entree + " - " + ETAT_LONG[e.entree] : "", e.obs + ph]
+          : [lab, e.entree ? e.entree + " - " + ETAT_LONG[e.entree] : "", e.sortie ? e.sortie + " - " + ETAT_LONG[e.sortie] : "", e.obs + ph];
+      }),
+      { columnStyles:{ 0:{ cellWidth:52 }, 1:{ cellWidth:30 }, 2:{ cellWidth:30 } }, didParseCell:d => { if (d.section === "body" && worse.has(d.row.index)) d.cell.styles.fillColor = [251, 232, 230]; } });
+    if (r.photos.length) para(r.photos.length + " photo(s) de la pièce en annexe.", 8);
+  });
+
+  if (isEntry()) {
+    title("6. Dépôt de garantie et observations");
+    tbl(null, [["Dépôt de garantie reçu", num(S.logement.depot).toFixed(2) + " EUR"]], { columnStyles:{ 0:{ cellWidth:90, fontStyle:"bold" }, 1:{ halign:"right" } } });
+    para("Observations du locataire : " + (S.obsLoc || "néant"));
+    para("Observations du bailleur : " + (S.obsBail || "néant"));
+    para("Le locataire peut demander à compléter cet état des lieux dans les 10 jours suivant son établissement, et pendant le premier mois de chauffe pour les éléments de chauffage (art. 3-2 de la loi du 6 juillet 1989).", 8);
+  } else {
+    title("6. Bilan et dépôt de garantie");
+    const c = calc();
+    para(S.conforme === "oui" ? "Le logement est restitué dans un état conforme à l'état des lieux d'entrée, hors usure normale." : S.conforme === "non" ? "Des dégradations sont constatées par rapport à l'état des lieux d'entrée." : "Conclusion non renseignée.", 9.5);
+    if (S.retenues.length) {
+      tbl(["Pièce / élément", "Dégradation", "Coût travaux", "Part locataire (vétusté)", "Montant retenu", "Justificatif"],
+        S.retenues.map(r => {
+          const v = vet(r);
+          return [r.element, r.degradation, num(r.cout) ? num(r.cout).toFixed(2) + " EUR" : "", num(r.cout) ? Math.round(v.taux * 100) + " % (" + v.g[1] + (v.age != null ? ", " + v.age.toFixed(1) + " an(s)" : "") + ")" : "", num(r.montant).toFixed(2) + " EUR", r.justif];
+        }),
+        { styles:{ fontSize:7.5, cellPadding:1.3, lineColor:[205, 211, 220], lineWidth:0.1, textColor:20 }, columnStyles:{ 4:{ halign:"right", cellWidth:24 } } });
+      para("Vétusté : " + (L.grille === "oui" ? "grille annexée au bail." : "grille indicative.") + " Les montants sont estimatifs et seront justifiés par devis ou facture. La signature du locataire vaut constat de l'état du logement, non acceptation des retenues.", 8);
+    }
+    const pen = penalite();
+    tbl(null, [
+      ["Dépôt de garantie", c.depot.toFixed(2) + " EUR"],
+      ["Total des retenues envisagées", c.total.toFixed(2) + " EUR"],
+      ["Montant à restituer", c.reste.toFixed(2) + " EUR"],
+      ["Date limite de restitution (délai " + c.mois + " mois à compter de la remise des clés)", c.lim ? pad2(c.lim.getDate()) + "/" + pad2(c.lim.getMonth() + 1) + "/" + c.lim.getFullYear() : ""]
+    ], { columnStyles:{ 0:{ cellWidth:90, fontStyle:"bold" }, 1:{ halign:"right" } } });
+    if (pen > 0) para("Pénalité de retard estimée (10 % du loyer mensuel hors charges par mois commencé, art. 22 loi 1989) : " + pen.toFixed(2) + " EUR, due au locataire.", 9);
+    para("Observations du locataire : " + (S.obsLoc || "néant"));
+    para("Observations du bailleur : " + (S.obsBail || "néant"));
+    para("Le dépôt de garantie est restitué dans un délai d'un mois si l'état des lieux de sortie est conforme à l'état des lieux d'entrée, de deux mois dans le cas contraire, déduction faite des sommes dues et justifiées (art. 22 de la loi du 6 juillet 1989).", 8);
+  }
+
+  need(72);
+  title("7. Signatures");
+  const rm = S.remise || "auto"; const te = tenantEmails().join(", ");
+  para(`Établi contradictoirement et signé électroniquement par les parties (décret n° 2016-382, art. 3). Signature électronique simple au sens de l'article 1367 du Code civil. Toute modification du contenu postérieure à une signature a entraîné l'effacement automatique des signatures. Exemplaire du locataire : ${rm === "auto" ? "transmis par voie électronique à " + te + " à la clôture" : rm === "mail" ? "envoyé par e-mail par le bailleur le jour de la signature" : "remis en main propre, en version imprimée"}. Nombre de photos annexées : ${photos.length}.`, 8.5);
+
+  const colW = (W - 2 * M - 8) / 2; const sy = y;
+  [["bailleur", "Pour le bailleur", (S.bailleur.nom || "") + (S.bailleur.representant ? ", représentée par " + S.bailleur.representant + " (" + S.bailleur.qualite + ")" : "")], ["locataire", "Le(s) locataire(s)", locNames()]].forEach(([p, t, n], k) => {
+    const x = M + k * (colW + 8); let yy = sy;
+    doc.setDrawColor(205, 211, 220); doc.rect(x, yy, colW, 58);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.text(T(t), x + 3, yy + 5);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
+    doc.text(doc.splitTextToSize(T(n), colW - 6), x + 3, yy + 10);
+    doc.setFont("helvetica", "bold");
+    doc.text(T(S.sig.lu[p] ? "\"Certifié exact, lu et approuvé\"" : ""), x + 3, yy + 20);
+    doc.setFont("helvetica", "normal");
+    if (S.sig[p] && !draft) {
+      try { const ip = doc.getImageProperties(S.sig[p]); let w = colW - 6, h = w * ip.height / ip.width; if (h > 30) { h = 30; w = h * ip.width / ip.height; } doc.addImage(S.sig[p], "PNG", x + 3, yy + 23, w, h); } catch (_) {}
+      doc.setFontSize(7.5); doc.setTextColor(90);
+      doc.text(T("Signé électroniquement le " + fmtDT(S.sig[p + "At"])), x + 3, yy + 55);
+      doc.setTextColor(20);
+    } else {
+      doc.setFontSize(8); doc.setTextColor(150); doc.text("Non signé", x + 3, yy + 40); doc.setTextColor(20);
+    }
+  });
+  y = sy + 64;
+  if (S.clotureAt && !draft) para("Document clôturé le " + fmtDT(S.clotureAt) + ".", 8.5);
+
+  need(40);
+  try {
+    if (typeof qrcode !== "undefined") {
+      const sujet = encodeURIComponent("Contestation EDL " + (S.logement.adresse || "") + " " + S.date);
+      const corps = encodeURIComponent("Bonjour,\n\nJe souhaite contester / compléter l'état des lieux du " + fmtDate(S.date) + " pour le logement situé " + (S.logement.adresse || "") + ".\n\nMotif : ");
+      const mailto = "mailto:" + (S.bailleur.email || "") + "?subject=" + sujet + "&body=" + corps;
+      const q = qrcode(0, "M"); q.addData(mailto); q.make();
+      const qrUrl = q.createDataURL(4, 6);
+      const qw = 32;
+      doc.addImage(qrUrl, "PNG", W - M - qw, y, qw, qw);
+      doc.setFontSize(7); doc.setTextColor(90);
+      doc.text(doc.splitTextToSize(T("Contestation ou complément dans les 10 jours (état d'entrée) : scannez ce QR code ou écrivez à " + (S.bailleur.email || "l'adresse du bailleur") + "."), W - 2 * M - qw - 4), M, y + 6);
+      doc.setTextColor(20);
+      y += qw + 4;
+    }
+  } catch (_) {}
+
+  if (photos.length) {
+    doc.addPage(); y = M; title("Annexe - photographies");
+    const pw = (W - 2 * M - 6) / 2, ph = 62; let k = 0;
+    for (const [lab, p] of photos) {
+      const col = k % 2; if (col === 0 && k > 0) y += ph + 12;
+      if (y + ph + 10 > 282) { doc.addPage(); y = M; }
+      const x = M + col * (pw + 6);
+      try { const src = light ? await shrinkImg(p.data, 800, 0.5) : p.data; const pr = doc.getImageProperties(src); let w = pw, h = pw * pr.height / pr.width; if (h > ph) { h = ph; w = ph * pr.width / pr.height; } doc.addImage(src, pr.fileType || "JPEG", x, y, w, h); } catch (_) {}
+      doc.setFontSize(8); doc.setTextColor(60);
+      doc.text(T(`${k + 1}. ${lab} - ${fmtDT(p.at)}`), x, y + ph + 4);
+      doc.setTextColor(20); k++;
+    }
+    y += ph + 12;
+  }
+
+  if (!draft) {
+    need(16);
+    doc.setFontSize(6.5); doc.setTextColor(110);
+    doc.text(doc.splitTextToSize(T("Données personnelles : traitées par le bailleur pour l'exécution du bail et la preuve de l'état des lieux (RGPD, art. 6-1 b et c). Destinataires : bailleur, locataire, hébergeur Google Drive, le cas échéant assureur ou commissaire de justice. Conservation : 3 ans après la restitution du dépôt de garantie. Droits d'accès, rectification, effacement, portabilité, opposition : contact " + (S.bailleur.email || "bailleur") + ". Réclamation possible auprès de la CNIL (www.cnil.fr)."), W - 2 * M), M, y + 2);
+    doc.setTextColor(20); y += 12;
+  }
+
+  const hash = await sha256(JSON.stringify(stripState(S)));
+  S.pdfHash = hash;
+  const n = doc.getNumberOfPages();
+  for (let pg = 1; pg <= n; pg++) {
+    doc.setPage(pg); doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(120);
+    doc.text(T("État des lieux - " + (L.adresse || "logement")), M, 289);
+    doc.text(`Page ${pg}/${n}`, W - M, 289, { align:"right" });
+    if (hash) doc.text("Empreinte SHA-256 : " + hash, M, 293);
+    if (draft) { doc.setFontSize(60); doc.setTextColor(225, 228, 233); doc.text("BROUILLON", W / 2, 170, { align:"center", angle:40 }); }
+    doc.setTextColor(20);
+  }
+  return doc.output("blob");
+}
+const GAS = typeof google !== "undefined" && google.script && google.script.run ? true : false;
+function gasCall(fn, ...args) { return new Promise((res, rej) => { google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args); }); }
+// Mode web (hébergé hors Google, ex. GitHub Pages) : parle à l'Apps Script en tant qu'API.
+const EXEC_URL = "https://script.google.com/macros/s/AKfycbwzVU85lyUHNLcckb5I3YllgL40LfJyaBEb8dK8AztaNhB1WjgSXGAPvMpbhB5oP8Q1/exec";
+const WEB = !GAS && typeof location !== "undefined" && /(github\.io|github\.dev|pages\.dev|\.web\.app)$/i.test(location.hostname || "");
+function jsonp(params, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const cb = "edlcb" + Math.random().toString(36).slice(2);
+    const s = document.createElement("script");
+    const to = setTimeout(() => { cleanup(); reject(new Error("timeout")); }, timeoutMs || 25000);
+    function cleanup() { clearTimeout(to); try { delete window[cb]; } catch (_) { window[cb] = undefined; } try { s.remove(); } catch (_) {} }
+    window[cb] = d => { cleanup(); resolve(d); };
+    const q = Object.assign({ callback: cb, cb: Date.now() }, params);
+    s.src = EXEC_URL + "?" + Object.entries(q).map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v)).join("&");
+    s.onerror = () => { cleanup(); reject(new Error("neterr")); };
+    document.body.appendChild(s);
+  });
+}
+function webSave(fields) {
+  return new Promise(resolve => {
+    const nm = "edlsave" + Date.now();
+    const ifr = document.createElement("iframe"); ifr.name = nm; ifr.style.display = "none";
+    document.body.appendChild(ifr);
+    const f = document.createElement("form");
+    f.method = "POST"; f.action = EXEC_URL + "?action=save"; f.target = nm; f.style.display = "none"; f.acceptCharset = "utf-8";
+    Object.entries(fields).forEach(([k, v]) => { const t = document.createElement("textarea"); t.name = k; t.value = v == null ? "" : String(v); f.appendChild(t); });
+    document.body.appendChild(f);
+    let done = false;
+    const finish = () => { if (done) return; done = true; setTimeout(() => { try { f.remove(); } catch (_) {} try { ifr.remove(); } catch (_) {} }, 1500); resolve(); };
+    ifr.onload = finish; setTimeout(finish, 20000);
+    f.submit();
+  });
+}
+function tenantEmails() { return S.locataires.map(l => (l.email || "").trim()).filter(x => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)); }
+function stripState(st) {
+  const o = Object.assign({}, st);
+  ["driveUrl","driveAt","sendMail","remise","prefilled","prefilled2","prefilled3","locked","readonly"].forEach(k => delete o[k]);
+  return o;
+}
+function archiveJson() {
+  const o = JSON.parse(JSON.stringify(stripState(S)));
+  const strip = a => (a || []).map(p => ({ at:p.at }));
+  o.pieces.forEach(r => { r.photos = strip(r.photos); r.elements.forEach(e => e.photos = strip(e.photos)); });
+  o.compteurs.forEach(c => c.photos = strip(c.photos));
+  o.compteursPhotos = strip(o.compteursPhotos);
+  o.sig = { bailleurAt:S.sig.bailleurAt, locataireAt:S.sig.locataireAt, lu:S.sig.lu };
+  o.pdfHash = S.pdfHash || "";
+  o.appVersion = APP_VERSION;
+  o.generatedAt = new Date().toISOString();
+  return JSON.stringify(o, null, 1);
+}
+function buildRgpd() {
+  return JSON.stringify({
+    version: "1.0",
+    genereLe: new Date().toISOString(),
+    traitement: "État des lieux locatif (entrée et sortie)",
+    responsableTraitement: S.bailleur.nom || "(à renseigner)",
+    contact: S.bailleur.email || "(à renseigner)",
+    baseLegale: ["Exécution du contrat de bail (art. 6-1-b RGPD)", "Obligation légale (loi n° 89-462 du 6 juillet 1989)"],
+    finalites: ["Preuve de l'état du logement à l'entrée et à la sortie", "Justification des retenues sur dépôt de garantie", "Gestion des litiges locatifs"],
+    categoriesDonnees: ["Identité et coordonnées des parties", "Nouvelle adresse du locataire", "Photographies du logement", "Signatures électroniques simples", "Relevés de compteurs", "Observations"],
+    destinataires: ["Bailleur", "Locataire(s)", "Hébergeur Google Drive (transfert hors UE encadré par CCT)", "Le cas échéant : assureur, commissaire de justice, juge"],
+    dureeConservation: "3 ans après la restitution du dépôt de garantie (prescription art. 7-1 loi 1989)",
+    droits: ["Accès", "Rectification", "Effacement", "Portabilité", "Opposition", "Limitation"],
+    reclamation: "CNIL - www.cnil.fr",
+    securite: "Chiffrement en transit (HTTPS), accès restreint, hash SHA-256 du PDF généré",
+    documentConcerne: { type:S.typeEdl, date:S.date, apt:S.apt, pdfHash:S.pdfHash || "" }
+  }, null, 2);
+}
+async function shrinkImg(u, max, q) {
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => {
+      const s = Math.min(1, max / Math.max(im.width, im.height));
+      const c = document.createElement("canvas"); c.width = Math.round(im.width * s); c.height = Math.round(im.height * s);
+      const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+      res(c.toDataURL("image/jpeg", q));
+    };
+    im.onerror = () => res(u); im.src = u;
+  });
+}
+async function makePdf(draft) {
+  const blob = await buildPdf(draft);
+  const slug = ((S.apt || "") + "-" + (S.logement.adresse || "logement")).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+  return { blob, name:`EDL-${S.typeEdl}-${S.date}-${slug}${draft ? "-brouillon" : ""}.pdf` };
+}
+async function savePhone(blob, name, draft) {
+  if (GAS) {
+    try {
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.target = "_blank";
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+      msg(draft ? "Brouillon téléchargé." : "Téléchargement lancé.");
+    } catch (_) { msg("Téléchargement impossible.", true); }
+    return;
+  }
+  let dl = null;
+  try { dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null; } catch (_) { dl = null; }
+  if (!dl) {
+    try {
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+      msg(draft ? "Brouillon téléchargé." : "PDF téléchargé.");
+    } catch (_) { msg("Enregistrement indisponible. Utilise un autre navigateur.", true); }
+    return;
+  }
+  try {
+    const r = await dl.save({ filename:name, data:blob });
+    msg(r.status === "saved" ? (draft ? "Brouillon enregistré." : "PDF enregistré.") : "PDF transmis.");
+  } catch (e) {
+    const c = e && e.code;
+    msg(c === "declined" ? "Enregistrement annulé." : c === "rate_limited" ? "Demande déjà ouverte." : "Enregistrement impossible.", true);
+  }
+}
+const b64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
+
+async function saveDrive(blob, name, lightMaker, isDraft) {
+  if (GAS) {
+    driveMsg("Envoi vers le Google Drive…");
+    try {
+      const r = await gasCall("savePdf", await b64(blob), name, (!isDraft && (S.remise || "auto") === "auto") ? tenantEmails() : [], isDraft ? "" : archiveJson());
+      S.driveUrl = /^https:\/\//.test(r.url || "") ? r.url : null;
+      S.driveAt = new Date().toISOString(); scheduleSave(); applyLock();
+      driveMsg("PDF enregistré dans le Drive le " + (r.when || "") + ".");
+      return true;
+    } catch (e) { driveMsg("Envoi impossible : " + ((e && e.message) || "erreur"), true); return false; }
+  }
+  if (WEB) {
+    driveMsg("Envoi vers le Google Drive…");
+    try {
+      const pdf64 = await b64(blob);
+      const emails = (!isDraft && (S.remise || "auto") === "auto") ? tenantEmails() : [];
+      await webSave({ pdf: pdf64, name: name, emails: emails.join(","), json: isDraft ? "" : archiveJson() });
+      // Confirmation : on vérifie que le fichier est bien apparu dans le Drive.
+      let ok = false;
+      for (let i = 0; i < 6 && !ok; i++) {
+        await new Promise(r => setTimeout(r, 2500));
+        try {
+          const list = await jsonp({ action: "list" });
+          const base = name.replace(/\.pdf$/i, "");
+          ok = Array.isArray(list) && list.some(a => (a.name || "").indexOf(base) === 0);
+        } catch (_) {}
+      }
+      S.driveUrl = "https://drive.google.com/drive/folders/" + CFG.driveEdlFolder;
+      S.driveAt = new Date().toISOString(); scheduleSave(); applyLock();
+      if (ok) { driveMsg("PDF enregistré dans le Drive." + (emails.length ? " Copie envoyée au locataire." : "")); return true; }
+      driveMsg("Envoi effectué. Vérifie dans quelques instants qu'il apparaît dans le Drive (« Voir dans le Drive »).");
+      return true;
+    } catch (e) { driveMsg("Envoi impossible : " + ((e && e.message) || "erreur") + ". Réessaie ou enregistre le PDF sur l'appareil.", true); return false; }
+  }
+  let mcp = null;
+  try { mcp = window.claude && window.claude.use ? await window.claude.use("mcp") : null; } catch (_) { mcp = null; }
+  if (!mcp) { driveMsg("Envoi vers Google Drive indisponible dans cette vue. Enregistre le PDF puis dépose-le manuellement.", true); return false; }
+  driveMsg("Envoi vers le Google Drive…");
+  let fileArgs = false; try { fileArgs = !!(await mcp.listTools()).fileArgs; } catch (_) {}
+  const input = { title:name, contentMimeType:"application/pdf", disableConversionToGoogleType:true, parentId:CFG.driveEdlFolder };
+  try {
+    if (fileArgs) input.base64Content = { $file:{ data:blob, name, type:"application/pdf" } };
+    else {
+      if (blob.size > 700 * 1024 && lightMaker) { driveMsg("PDF lourd : version allégée…"); blob = await lightMaker(); }
+      if (blob.size > 700 * 1024) { driveMsg("PDF trop lourd pour l'envoi direct.", true); return false; }
+      input.base64Content = await b64(blob);
+    }
+    const r = await mcp.callTool("Google Drive", "create_file", input);
+    const f = r && r.payload && typeof r.payload === "object" ? r.payload : {};
+    const okUrl = /^https:\/\//.test(f.viewUrl || "") ? f.viewUrl : "https://drive.google.com/drive/folders/" + CFG.driveEdlFolder;
+    S.driveUrl = okUrl; S.driveAt = new Date().toISOString(); scheduleSave(); applyLock();
+    let shared = [];
+    if (!isDraft && (S.remise || "auto") === "auto" && f.id) {
+      for (const em of tenantEmails()) { try { await mcp.callTool("Google Drive", "share_file", { fileId:f.id, emailAddress:em, role:"reader" }); shared.push(em); } catch (_) {} }
+    }
+    if (!isDraft) {
+      try { await mcp.callTool("Google Drive", "create_file", { title:name.replace(/\.pdf$/, ".json"), textContent:archiveJson(), contentMimeType:"application/json", disableConversionToGoogleType:true, parentId:CFG.driveDataFolder }); } catch (_) {}
+      try { await mcp.callTool("Google Drive", "create_file", { title:name.replace(/\.pdf$/, "-rgpd.json"), textContent:buildRgpd(), contentMimeType:"application/json", disableConversionToGoogleType:true, parentId:CFG.driveDataFolder }); } catch (_) {}
+    }
+    driveMsg("PDF enregistré dans le Drive." + (shared.length ? " Locataire prévenu." : ""));
+    return true;
+  } catch (e) {
+    const c = e && e.code;
+    const t = { server_not_connected:"Google Drive non connecté.", needs_reauth:"Connexion Drive expirée.", selection_required:"Choisis la connexion Drive.", not_in_manifest:"Accès Drive refusé.", blocked_by_policy:"Google Drive bloqué.", approval_required:"Approbation Drive impossible ici.", tool_error:"Le Drive a refusé le fichier.", server_unavailable:"Le Drive n'a pas répondu.", upstream_error:"Le Drive n'a pas répondu." }[c];
+    driveMsg(t || "Envoi Drive impossible (" + (c || "erreur") + ").", true); return false;
+  }
+}
+function driveMsg(t, err) { const m = document.getElementById("driveMsg"); if (!m) return; m.textContent = t; m.className = err ? "err" : ""; }
+async function exportPdf(draft, toDrive) { if (busy) return; busy = true; try { await exportPdf2(draft, toDrive); } finally { busy = false; } }
+async function exportPdf2(draft, toDrive) {
+  msg("Génération du PDF…");
+  let out; try { out = await makePdf(draft); } catch (e) { msg(e.message === "lib" ? "Bibliothèque PDF non chargée. Vérifiez votre connexion internet, puis rechargez la page." : "Erreur PDF.", true); return; }
+  msg("");
+  if (toDrive) await saveDrive(out.blob, out.name, async () => (await buildPdf(draft, true)), draft);
+  if (toDrive !== "only") await savePhone(out.blob, out.name, draft);
+}
+
+function modal(html, cls) {
+  const host = document.getElementById("modalHost");
+  host.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><div class="modal-inner ${cls || ""}">${html}</div></div>`;
+}
+function closeModal() { const host = document.getElementById("modalHost"); if (host) host.innerHTML = ""; }
+async function previewPdf(draft) {
+  msg("Préparation de l'aperçu…");
+  let blob; try { blob = await buildPdf(draft); } catch (e) { msg("Aperçu impossible.", true); return; }
+  msg("");
+  const url = URL.createObjectURL(blob);
+  modal(`<div class="modal-head"><span>Aperçu ${draft ? "brouillon" : "signé"}</span><button type="button" class="x" data-act="closePreview" aria-label="Fermer">×</button></div>
+    <div class="modal-body"><iframe src="${url}" title="Aperçu du PDF"></iframe></div>
+    <div class="modal-foot"><button type="button" class="btn ghost" data-act="closePreview">Fermer</button></div>`);
+  const modalEl = document.querySelector(".modal");
+  if (modalEl) modalEl.addEventListener("click", ev => { if (ev.target === modalEl) { URL.revokeObjectURL(url); closeModal(); } });
+}
+document.addEventListener("click", e => { if (e.target.closest('[data-act="closePreview"]')) closeModal(); });
+
+function openRecap() {
+  const c = calc(); const d = degraded(); const pen = penalite();
+  const rows = [];
+  rows.push(`<div class="h">Parties</div>`);
+  rows.push(`<div class="k">Bailleur</div><div class="v">${esc(S.bailleur.nom || "—")}</div>`);
+  S.locataires.forEach((l, i) => rows.push(`<div class="k">Locataire ${i + 1}</div><div class="v">${esc(l.nom || "—")}</div>`));
+  rows.push(`<div class="h">Logement</div>`);
+  rows.push(`<div class="k">Adresse</div><div class="v">${esc(S.logement.adresse || "—")}</div>`);
+  rows.push(`<div class="k">Date</div><div class="v">${esc(fmtDate(S.date) || "—")}</div>`);
+  rows.push(`<div class="h">Compteurs</div>`);
+  S.compteurs.forEach(cpt => rows.push(`<div class="k">${esc(cpt.label)}</div><div class="v">${esc(cpt.entree || "—")} → ${esc(cpt.sortie || "—")}</div>`));
+  rows.push(`<div class="h">Clés</div>`);
+  S.cles.forEach(cl => rows.push(`<div class="k">${esc(cl.label)}</div><div class="v">${esc(cl.entree || "—")} → ${esc(cl.sortie || "—")}</div>`));
+  rows.push(`<div class="h">Écarts relevés</div>`);
+  if (d.length) d.forEach(x => rows.push(`<div class="k">${esc(x.r.nom)} · ${esc(x.e.label)}${x.e.materiau ? " (" + esc(x.e.materiau) + ")" : ""}</div><div class="v">${esc(x.e.entree || "?")} → ${esc(x.e.sortie)}</div>`));
+  else rows.push(`<div class="k">Aucun écart signalé</div><div class="v"></div>`);
+  rows.push(`<div class="h">Bilan</div>`);
+  rows.push(`<div class="k">Dépôt de garantie</div><div class="v">${eur(c.depot)}</div>`);
+  rows.push(`<div class="k">Total retenues</div><div class="v">${eur(c.total)}</div>`);
+  rows.push(`<div class="k">À restituer</div><div class="v"><b>${eur(c.reste)}</b></div>`);
+  if (c.lim) rows.push(`<div class="k">Au plus tard le</div><div class="v">${pad2(c.lim.getDate())}/${pad2(c.lim.getMonth() + 1)}/${c.lim.getFullYear()}</div>`);
+  if (pen > 0) rows.push(`<div class="k">Pénalité de retard</div><div class="v">${eur(pen)}</div>`);
+  modal(`<div class="modal-head"><span>Récapitulatif</span><button type="button" class="x" data-act="closeRecap" aria-label="Fermer">×</button></div>
+    <div class="modal-body"><div class="recap-table">${rows.join("")}</div></div>
+    <div class="modal-foot"><button type="button" class="btn ghost" data-act="closeRecap">Fermer</button></div>`);
+}
+document.addEventListener("click", e => { if (e.target.closest('[data-act="closeRecap"]')) closeModal(); });
+
+let photoEditorState = null;
+function openPhotoEditor(path, idx) {
+  const arr = getPath(S, path);
+  if (!arr || !arr[idx]) return;
+  const img = new Image();
+  img.onload = () => {
+    const maxW = 800;
+    const s = Math.min(1, maxW / img.width);
+    const w = Math.round(img.width * s), h = Math.round(img.height * s);
+    photoEditorState = { path, idx, w, h, s, rects: [], img };
+    modal(`<div class="modal-head"><span>Retoucher la photo (floutage)</span><button type="button" class="x" data-act="closePhoto" aria-label="Fermer">×</button></div>
+      <div class="modal-body"><p class="pad-sub">Dessine un rectangle sur la zone à flouter (visage, document, plaque…).</p>
+      <div class="photo-editor"><canvas id="blurCanvas" width="${w}" height="${h}"></canvas><span class="hint">Glisse avec le doigt</span></div></div>
+      <div class="modal-foot"><button type="button" class="btn ghost" data-act="undoBlur">Annuler le dernier</button><button type="button" class="btn ghost" data-act="closePhoto">Fermer</button><button type="button" class="btn primary" data-act="applyBlur">Appliquer et enregistrer</button></div>`);
+    const cv = document.getElementById("blurCanvas");
+    const ctx = cv.getContext("2d");
+    let drawing = false, sx = 0, sy = 0, cx = 0, cy = 0;
+    const pt = e => { const r = cv.getBoundingClientRect(); return { x:(e.clientX - r.left) * (w / r.width), y:(e.clientY - r.top) * (h / r.height) }; };
+    const redraw = () => {
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      ctx.save();
+      ctx.filter = "blur(14px)";
+      for (const r of photoEditorState.rects) {
+        ctx.drawImage(img, r.x / s, r.y / s, r.w / s, r.h / s, r.x, r.y, r.w, r.h);
+      }
+      ctx.restore();
+      ctx.strokeStyle = "#d6336c"; ctx.lineWidth = 2;
+      for (const r of photoEditorState.rects) ctx.strokeRect(r.x, r.y, r.w, r.h);
+      if (drawing) { ctx.strokeStyle = "#0b7285"; ctx.setLineDash([6, 4]); ctx.strokeRect(Math.min(sx, cx), Math.min(sy, cy), Math.abs(cx - sx), Math.abs(cy - sy)); ctx.setLineDash([]); }
+    };
+    photoEditorState.redraw = redraw;
+    redraw();
+    cv.addEventListener("pointerdown", e => { e.preventDefault(); drawing = true; try { cv.setPointerCapture(e.pointerId); } catch (_) {} const p = pt(e); sx = p.x; sy = p.y; cx = p.x; cy = p.y; redraw(); });
+    cv.addEventListener("pointermove", e => { if (!drawing) return; const p = pt(e); cx = p.x; cy = p.y; redraw(); });
+    const endDraw = () => { if (!drawing) return; drawing = false; const x = Math.min(sx, cx), y2 = Math.min(sy, cy), ww = Math.abs(cx - sx), hh = Math.abs(cy - sy); if (ww > 8 && hh > 8) photoEditorState.rects.push({ x, y:y2, w:ww, h:hh }); redraw(); };
+    cv.addEventListener("pointerup", endDraw); cv.addEventListener("pointercancel", endDraw); cv.addEventListener("pointerleave", endDraw);
+  };
+  img.onerror = () => msg("Impossible de charger la photo.", true);
+  img.src = arr[idx].data;
+}
+async function applyBlur(b) {
+  if (!photoEditorState) { closeModal(); return; }
+  const cv = document.getElementById("blurCanvas");
+  if (!cv) { closeModal(); return; }
+  if (photoEditorState.rects.length === 0) { msg("Aucun rectangle tracé.", true); return; }
+  const dataUrl = cv.toDataURL("image/jpeg", 0.75);
+  const arr = getPath(S, photoEditorState.path);
+  if (arr && arr[photoEditorState.idx]) {
+    arr[photoEditorState.idx].data = dataUrl;
+    arr[photoEditorState.idx].blurred = true;
+  }
+  photoEditorState = null;
+  closeModal();
+  invalidateSigs();
+  scheduleSave();
+  render();
+  msg("Photo retouchée (floutage appliqué).");
+}
+document.addEventListener("click", e => {
+  if (e.target.closest('[data-act="closePhoto"]')) { photoEditorState = null; closeModal(); }
+  if (e.target.closest('[data-act="undoBlur"]')) {
+    if (photoEditorState && photoEditorState.rects.length) { photoEditorState.rects.pop(); if (photoEditorState.redraw) photoEditorState.redraw(); }
+  }
+});
+
+function buildICS() {
+  const c = calc();
+  if (!c.lim) return "";
+  const dt = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const dtDate = d => d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate());
+  const end = new Date(c.lim.getTime() + 86400000);
+  return [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//SCI ALCF//EDL//FR", "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    "UID:" + Date.now() + "@scialcf",
+    "DTSTAMP:" + dt(new Date()),
+    "DTSTART;VALUE=DATE:" + dtDate(c.lim),
+    "DTEND;VALUE=DATE:" + dtDate(end),
+    "SUMMARY:Restitution dépôt de garantie - " + (S.logement.adresse || "logement"),
+    "DESCRIPTION:Date limite de restitution du dépôt de garantie (" + c.mois + " mois). Montant à restituer : " + eur(c.reste) + ".",
+    "BEGIN:VALARM", "TRIGGER:-P3D", "ACTION:DISPLAY", "DESCRIPTION:Rappel J-3 restitution dépôt", "END:VALARM",
+    "END:VEVENT", "END:VCALENDAR"
+  ].join("\r\n");
+}
+
+async function exportZip() {
+  if (busy) { msg("Opération en cours…"); return; }
+  if (!window.JSZip) { msg("Bibliothèque ZIP non chargée.", true); return; }
+  busy = true;
+  try {
+    msg("Préparation du ZIP…");
+    const pdf = await buildPdf(false);
+    const zip = new JSZip();
+    zip.file("edl.pdf", pdf);
+    zip.file("edl.json", archiveJson());
+    zip.file("registre-rgpd.json", buildRgpd());
+    const ics = buildICS();
+    if (ics) zip.file("rappel-depot.ics", ics);
+    S.pieces.forEach((r, ri) => {
+      r.photos.forEach((p, pi) => { const b = p.data.split(",")[1]; if (b) zip.file(`photos/piece-${ri}-vue-${pi}.jpg`, b, { base64:true }); });
+      r.elements.forEach((e, ei) => e.photos.forEach((p, pi) => { const b = p.data.split(",")[1]; if (b) zip.file(`photos/piece-${ri}-elt-${ei}-${pi}.jpg`, b, { base64:true }); }));
+    });
+    S.compteurs.forEach((c, ci) => c.photos.forEach((p, pi) => { const b = p.data.split(",")[1]; if (b) zip.file(`photos/compteur-${ci}-${pi}.jpg`, b, { base64:true }); }));
+    const blob = await zip.generateAsync({ type:"blob" });
+    const name = `EDL-${S.typeEdl}-${S.date}-${(S.apt || "dossier")}.zip`;
+    msg("");
+    await savePhone(blob, name, false);
+  } catch (e) {
+    msg("Erreur ZIP : " + ((e && e.message) || "inconnue"), true);
+  } finally {
+    busy = false;
+  }
+}
+
+function prefill(st) { if (st.prefilled) return; st.prefilled = true; }
+function migrateApt(st) { if (!st.apt) st.apt = "F4-101"; }
+function prefill3(st) { if (st.prefilled3 || st.locked || st.readonly) return; applyEntry(st, st.apt || "F4-101"); st.prefilled3 = true; }
+function prefill2(st) {
+  if (st.prefilled2 || st.locked || st.readonly) return;
+  const a = APTS[st.apt];
+  if (a && a.loc && a.loc.nom && st.locataires.length && !st.locataires[0].nom) st.locataires[0].nom = a.loc.nom;
+  st.prefilled2 = true;
+}
+function normalize(st) {
+  const d = freshState();
+  st.sig = Object.assign(d.sig, st.sig || {});
+  st.sig.lu = Object.assign({ bailleur:false, locataire:false }, st.sig.lu || {});
+  st.bailleur = Object.assign(d.bailleur, st.bailleur || {});
+  st.logement = Object.assign(d.logement, st.logement || {});
+  if (!Array.isArray(st.locataires) || !st.locataires.length) st.locataires = d.locataires;
+  st.compteursPhotos = st.compteursPhotos || [];
+  (st.compteurs || []).forEach(c => { c.photos = c.photos || []; });
+  (st.pieces || []).forEach(r => { r.photos = r.photos || []; r.id = r.id || uid(); (r.elements || []).forEach(e => { e.photos = e.photos || []; e.obs = e.obs || ""; e.materiau = e.materiau || ""; }); });
+  (st.retenues || []).forEach(r => { ["grille","pose","cout","justif","degradation","element","montant"].forEach(k => { if (r[k] == null) r[k] = ""; }); });
+  if (!st.remise) st.remise = "auto";
+  if (typeof st.readonly !== "boolean") st.readonly = false;
+  return st;
+}
+
+document.getElementById("form").disabled = true;
+render(); renderSigs();
+document.getElementById("form").disabled = true;
+
+(async () => {
+  idb = await idbOpen();
+  // Pré-remplissage par lien : ?edlc=<base64url(JSON compact)> (lien public) ou #edlc=... (artefact)
+  let pre = null;
+  try {
+    const raw = await new Promise(res => {
+      try {
+        if (GAS && typeof google !== "undefined" && google.script && google.script.url && google.script.url.getLocation) {
+          let done = false;
+          google.script.url.getLocation(loc => { done = true; res((loc && loc.parameter && loc.parameter.edlc) || ""); });
+          setTimeout(() => { if (!done) res(""); }, 4000);
+          return;
+        }
+      } catch (_) {}
+      const m = ((location.hash || "") + "&" + (location.search || "")).match(/edlc=([^&]+)/);
+      res(m ? m[1] : "");
+    });
+    if (raw) {
+      let seen = false;
+      try { seen = sessionStorage.getItem("edl-pre") === raw; } catch (_) {}
+      if (!seen) {
+        let b = decodeURIComponent(raw).replace(/-/g, "+").replace(/_/g, "/");
+        while (b.length % 4) b += "=";
+        const o = JSON.parse(decodeURIComponent(escape(atob(b))));
+        if (o && o.apt && APTS[o.apt]) pre = o;
+        try { sessionStorage.setItem("edl-pre", raw); } catch (_) {}
+      }
+    }
+  } catch (_) { pre = null; }
+  if (pre) {
+    try {
+      S = freshState(); applyApt(pre.apt); S.typeEdl = pre.type || "sortie";
+      const d = new Date(); S.date = isoDate(d); S.dateCles = isoDate(d); S.heureDebut = hhmm(d); S.heureFin = "";
+      if (pre.repr) { S.bailleur.representant = pre.repr; S.bailleur.qualite = pre.qualite || "Gérant"; }
+      if (pre.loc) Object.assign(S.locataires[0], pre.loc);
+      const fill = pre.fill || "B";
+      S.pieces.forEach(r => r.elements.forEach(e => { const n = /interphone|visiophone/i.test(e.label); e.entree = n ? "N" : fill; e.sortie = n ? "N" : fill; e.obs = ""; e.photos = []; }));
+      S.compteurs.forEach(c => { c.entree = ""; c.sortie = ""; c.numero = ""; c.photos = []; });
+      (pre.compteurs || []).forEach(o => { const c = S.compteurs.find(x => x.label === o.l); if (c) { if (o.n) c.numero = o.n; if (o.s) c.sortie = o.s; if (o.e) c.entree = o.e; } });
+      S.cles.forEach(c => { c.entree = ""; c.sortie = ""; c.obs = ""; });
+      (pre.cles || []).forEach(o => { const c = S.cles.find(x => x.label === o.l); if (c) { c.entree = o.e || ""; c.sortie = o.s || ""; } });
+      S.conforme = pre.conforme || ""; S.retenues = [];
+      S.sig = { bailleur:null, locataire:null, bailleurAt:null, locataireAt:null, lu:{ bailleur:false, locataire:false } };
+      S.prefilled = S.prefilled2 = S.prefilled3 = true; S.locked = false; S.readonly = false; S.clotureAt = null; S.remise = pre.remise || "auto";
+      render(); renderSigs(); scheduleSave();
+      document.getElementById("form").disabled = false; updateBar(); applyLock();
+      const vv = document.getElementById("ver"); if (vv) vv.textContent = "Version " + APP_VERSION + (GAS ? " · Drive SCI" : "");
+      msg("Document pré-rempli. Vérifie les informations, puis fais signer les deux parties avant de clôturer.");
+      if (!GAS && window.claude && window.claude.use) { try { const u = await window.claude.use("user"); if (u && u.isOwner && u.isOwner()) document.getElementById("pushApp").hidden = false; } catch (_) {} }
+      return;
+    } catch (e) { pre = null; }
+  }
+  const saved = await idbGet("state");
+  try {
+    if (saved && saved.v === 1) {
+      S = normalize(Object.assign(freshState(), saved));
+      prefill(S); migrateApt(S); prefill2(S); prefill3(S);
+      render(); renderSigs(); saveState = "brouillon repris";
+    } else {
+      if (saved) await idbSet("state-bak-" + Date.now(), saved);
+      saveState = idb ? "" : "stockage local indisponible";
+    }
+  } catch (e) {
+    if (saved) await idbSet("state-bak-" + Date.now(), saved);
+    S = freshState(); render(); renderSigs();
+    msg("Le brouillon précédent n'a pas pu être relu.", true);
+  }
+  document.getElementById("form").disabled = false;
+  updateBar(); applyLock();
+  const v = document.getElementById("ver");
+  if (v) v.textContent = "Version " + APP_VERSION + (GAS ? " · Drive SCI" : "");
+  if (!GAS && window.claude && window.claude.use) {
+    try { const u = await window.claude.use("user"); if (u && u.isOwner && u.isOwner()) document.getElementById("pushApp").hidden = false; } catch (_) {}
+  }
+})();
+})();
+</script>
+<script>
+if ("serviceWorker" in navigator) { window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); }); }
+</script>
+</body>
+</html>
