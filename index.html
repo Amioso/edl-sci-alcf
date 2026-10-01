@@ -907,7 +907,7 @@ function parseArchName(n) {
 }
 async function histFetch() {
   if (GAS) return await new Promise((res, rej) => { google.script.run.withSuccessHandler(res).withFailureHandler(e => rej(e)).listArchives(); });
-  if (WEB) { const out = await jsonp({ action: "list" }); return Array.isArray(out) ? out : []; }
+  if (WEB) { const out = await webGet({ action: "list" }); return Array.isArray(out) ? out : []; }
   let mcp = null; try { mcp = window.claude && window.claude.use ? await window.claude.use("mcp") : null; } catch (_) { mcp = null; }
   if (!mcp) throw new Error("nomcp");
   const r = await mcp.callTool("Google Drive", "search_files", { query:"parentId = '" + CFG.driveDataFolder + "'" });
@@ -916,7 +916,7 @@ async function histFetch() {
 }
 async function histGetJson(id) {
   if (GAS) return await new Promise((res, rej) => { google.script.run.withSuccessHandler(res).withFailureHandler(e => rej(e)).getArchive(id); });
-  if (WEB) { return await jsonp({ action: "get", id: id }); }
+  if (WEB) { return await webGet({ action: "get", id: id }); }
   const mcp = await window.claude.use("mcp");
   const r = await mcp.callTool("Google Drive", "download_file_content", { fileId:id });
   let c = r && r.payload;
@@ -1448,33 +1448,21 @@ function gasCall(fn, ...args) { return new Promise((res, rej) => { google.script
 // Mode web (hébergé hors Google, ex. GitHub Pages) : parle à l'Apps Script en tant qu'API.
 const EXEC_URL = "https://script.google.com/macros/s/AKfycbwzVU85lyUHNLcckb5I3YllgL40LfJyaBEb8dK8AztaNhB1WjgSXGAPvMpbhB5oP8Q1/exec";
 const WEB = !GAS && typeof location !== "undefined" && /(github\.io|github\.dev|pages\.dev|\.web\.app)$/i.test(location.hostname || "");
-function jsonp(params, timeoutMs) {
-  return new Promise((resolve, reject) => {
-    const cb = "edlcb" + Math.random().toString(36).slice(2);
-    const s = document.createElement("script");
-    const to = setTimeout(() => { cleanup(); reject(new Error("timeout")); }, timeoutMs || 25000);
-    function cleanup() { clearTimeout(to); try { delete window[cb]; } catch (_) { window[cb] = undefined; } try { s.remove(); } catch (_) {} }
-    window[cb] = d => { cleanup(); resolve(d); };
-    const q = Object.assign({ callback: cb, cb: Date.now() }, params);
-    s.src = EXEC_URL + "?" + Object.entries(q).map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v)).join("&");
-    s.onerror = () => { cleanup(); reject(new Error("neterr")); };
-    document.body.appendChild(s);
-  });
+// Lecture (sans cookie -> anonyme -> pas d'erreur multi-comptes ; CORS lisible).
+async function webGet(params) {
+  const q = Object.assign({ callback: "_", t: Date.now() }, params);
+  const url = EXEC_URL + "?" + Object.entries(q).map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v)).join("&");
+  const txt = await (await fetch(url, { method: "GET" })).text();
+  let raw = txt;
+  if (/^\s*_\(/.test(txt)) { const i = txt.indexOf("("), j = txt.lastIndexOf(")"); if (i >= 0 && j > i) raw = txt.slice(i + 1, j); }
+  return JSON.parse(raw);
 }
-function webSave(fields) {
-  return new Promise(resolve => {
-    const nm = "edlsave" + Date.now();
-    const ifr = document.createElement("iframe"); ifr.name = nm; ifr.style.display = "none";
-    document.body.appendChild(ifr);
-    const f = document.createElement("form");
-    f.method = "POST"; f.action = EXEC_URL + "?action=save"; f.target = nm; f.style.display = "none"; f.acceptCharset = "utf-8";
-    Object.entries(fields).forEach(([k, v]) => { const t = document.createElement("textarea"); t.name = k; t.value = v == null ? "" : String(v); f.appendChild(t); });
-    document.body.appendChild(f);
-    let done = false;
-    const finish = () => { if (done) return; done = true; setTimeout(() => { try { f.remove(); } catch (_) {} try { ifr.remove(); } catch (_) {} }, 1500); resolve(); };
-    ifr.onload = finish; setTimeout(finish, 20000);
-    f.submit();
-  });
+// Écriture (fetch POST, sans cookie, réponse JSON lisible en CORS).
+async function webPost(action, fields) {
+  const body = new URLSearchParams();
+  Object.entries(fields).forEach(([k, v]) => body.set(k, v == null ? "" : String(v)));
+  const txt = await (await fetch(EXEC_URL + "?action=" + encodeURIComponent(action), { method: "POST", body: body })).text();
+  return JSON.parse(txt);
 }
 function tenantEmails() { return S.locataires.map(l => (l.email || "").trim()).filter(x => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)); }
 function stripState(st) {
@@ -1576,22 +1564,15 @@ async function saveDrive(blob, name, lightMaker, isDraft) {
     try {
       const pdf64 = await b64(blob);
       const emails = (!isDraft && (S.remise || "auto") === "auto") ? tenantEmails() : [];
-      await webSave({ pdf: pdf64, name: name, emails: emails.join(","), json: isDraft ? "" : archiveJson() });
-      // Confirmation : on vérifie que le fichier est bien apparu dans le Drive.
-      let ok = false;
-      for (let i = 0; i < 6 && !ok; i++) {
-        await new Promise(r => setTimeout(r, 2500));
-        try {
-          const list = await jsonp({ action: "list" });
-          const base = name.replace(/\.pdf$/i, "");
-          ok = Array.isArray(list) && list.some(a => (a.name || "").indexOf(base) === 0);
-        } catch (_) {}
+      const res = await webPost("save", { pdf: pdf64, name: name, emails: emails.join(","), json: isDraft ? "" : archiveJson() });
+      if (res && res.ok) {
+        S.driveUrl = /^https:\/\//.test(res.url || "") ? res.url : ("https://drive.google.com/drive/folders/" + CFG.driveEdlFolder);
+        S.driveAt = new Date().toISOString(); scheduleSave(); applyLock();
+        driveMsg("PDF enregistré dans le Drive le " + (res.when || "") + "." + (res.sent && res.sent.length ? " Copie envoyée au locataire." : ""));
+        return true;
       }
-      S.driveUrl = "https://drive.google.com/drive/folders/" + CFG.driveEdlFolder;
-      S.driveAt = new Date().toISOString(); scheduleSave(); applyLock();
-      if (ok) { driveMsg("PDF enregistré dans le Drive." + (emails.length ? " Copie envoyée au locataire." : "")); return true; }
-      driveMsg("Envoi effectué. Vérifie dans quelques instants qu'il apparaît dans le Drive (« Voir dans le Drive »).");
-      return true;
+      driveMsg("Envoi impossible : " + ((res && res.error) || "erreur serveur") + ".", true);
+      return false;
     } catch (e) { driveMsg("Envoi impossible : " + ((e && e.message) || "erreur") + ". Réessaie ou enregistre le PDF sur l'appareil.", true); return false; }
   }
   let mcp = null;
