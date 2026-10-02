@@ -15,6 +15,33 @@
 <style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
+<script>
+/* Porte d'entrée : code d'accès (empreinte SHA-256, le code n'est pas dans la page). */
+(function () {
+  const ENTRY_HASH = "0e44fe4366dbd2e97b20a10c5bb1197540c81f2031c4257667097bb80e7a9b9c";
+  const KEY = "edl-entry-ok";
+  try { if (localStorage.getItem(KEY) === ENTRY_HASH) return; } catch (_) {}
+  async function sha(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(s))); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
+  function build() {
+    const ov = document.createElement("div");
+    ov.id = "entryGate";
+    ov.style.cssText = "position:fixed;inset:0;z-index:99999;background:#0f2a3d;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:system-ui,-apple-system,sans-serif;padding:24px;text-align:center";
+    ov.innerHTML = '<div style="font:800 2.4rem/1 system-ui;letter-spacing:-.02em">SCI ALCF</div><div style="opacity:.8;font-size:15px">État des lieux — accès réservé</div><input id="_ec" type="password" autocomplete="off" placeholder="Code d\'accès" style="font-size:18px;padding:13px 14px;border-radius:12px;border:0;width:min(300px,82vw);text-align:center;box-sizing:border-box"><button id="_eb" type="button" style="font:700 16px system-ui;padding:12px 28px;border-radius:99px;border:0;background:#63e6be;color:#06141a;cursor:pointer">Entrer</button><div id="_em" style="min-height:20px;color:#ff8787;font-size:14px"></div>';
+    (document.body || document.documentElement).appendChild(ov);
+    try { document.body.style.overflow = "hidden"; } catch (_) {}
+    const inp = ov.querySelector("#_ec"), btn = ov.querySelector("#_eb"), m = ov.querySelector("#_em");
+    async function go() {
+      const h = await sha((inp.value || "").trim());
+      if (h === ENTRY_HASH) { try { localStorage.setItem(KEY, ENTRY_HASH); } catch (_) {} ov.remove(); try { document.body.style.overflow = ""; } catch (_) {} }
+      else { m.textContent = "Code incorrect."; inp.value = ""; inp.focus(); }
+    }
+    btn.addEventListener("click", go);
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+    setTimeout(() => { try { inp.focus(); } catch (_) {} }, 150);
+  }
+  if (document.body) build(); else document.addEventListener("DOMContentLoaded", build);
+})();
+</script>
 <title>État des lieux d'entrée et de sortie</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -283,16 +310,18 @@ const CFG = {
   driveEdlFolder: "1XIWwVKO-liDOT6D_sgdQmzZOEkXiNwgf",
   driveDataFolder:"1FKgBMOpkKk30WVMOheBL9XjZIjg5svjo",
   driveAppFolder:"1d5uyIZFOyXQ772JV4BlVKbhKHZmFHGmq",
-  adminPin:"pires77"
+  adminHash:"27e440b006d89ef4abc4bd5d31fb377a9b7605888a817c7a52c2a33aee69d601"
 };
-const APP_VERSION = "2026-10-01 v13";
+const APP_VERSION = "2026-10-02 v14";
 let adminOk = false;
 async function isOwnerUser() { try { if (!GAS && window.claude && window.claude.use) { const u = await window.claude.use("user"); return !!(u && u.isOwner && u.isOwner()); } } catch (_) {} return false; }
+async function sha256hex(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(s))); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
 async function ensureAdmin() {
   if (adminOk) return true;
   if (await isOwnerUser()) { adminOk = true; return true; }
   const p = prompt("Code administrateur SCI (réservé au gérant) :");
-  if (p != null && p.trim() === CFG.adminPin) { adminOk = true; return true; }
+  if (p == null) return false;
+  try { if ((await sha256hex(p.trim())) === CFG.adminHash) { adminOk = true; return true; } } catch (_) {}
   return false;
 }
 
