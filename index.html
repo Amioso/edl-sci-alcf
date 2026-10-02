@@ -465,8 +465,8 @@ function mkRoom(nom, type) {
 function freshState() {
   const now = new Date();
   return {
-    v:1, date:isoDate(now), heureDebut:hhmm(now), heureFin:"", lieu:"",
-    bailleur:{ nom:"", rcs:"", siege:"", representant:"", qualite:"Gérant", tel:"", email:"" },
+    v:1, date:isoDate(now), heureDebut:hhmm(now), heureFin:"", lieu:"Donnemarie-Dontilly",
+    bailleur:{ nom:"SCI ALCF", rcs:"893 541 524 R.C.S. Melun", siege:"20 rue du Moulin à Tan, 77520 Donnemarie-Dontilly", representant:"Fernando PIRES", qualite:"Gérant", tel:"+33 7 56 92 32 07", email:"scialcf@gmail.com" },
     locataires:[{ nom:"", adresse:"", tel:"", email:"" }],
     mandataire:"",
     logement:{ adresse:"", etage:"", type:"", surface:"", meuble:"vide", dateBail:"", dateEntree:"", loyer:"", charges:"", depot:"", chauffage:"", eau:"", grille:"" },
@@ -1792,7 +1792,9 @@ function normalize(st) {
   const d = freshState();
   st.sig = Object.assign(d.sig, st.sig || {});
   st.sig.lu = Object.assign({ bailleur:false, locataire:false }, st.sig.lu || {});
-  st.bailleur = Object.assign(d.bailleur, st.bailleur || {});
+  st.bailleur = Object.assign({}, d.bailleur, st.bailleur || {});
+  Object.keys(d.bailleur).forEach(k => { if (!String(st.bailleur[k] || "").trim()) st.bailleur[k] = d.bailleur[k]; });
+  if (!String(st.lieu || "").trim()) st.lieu = d.lieu;
   st.logement = Object.assign(d.logement, st.logement || {});
   if (!Array.isArray(st.locataires) || !st.locataires.length) st.locataires = d.locataires;
   st.compteursPhotos = st.compteursPhotos || [];
