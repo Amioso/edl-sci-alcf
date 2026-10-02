@@ -20,6 +20,7 @@
 (function () {
   const ENTRY_HASH = "0e44fe4366dbd2e97b20a10c5bb1197540c81f2031c4257667097bb80e7a9b9c";
   const KEY = "edl-entry-ok";
+  try { if (/[?&]sign=/.test(location.search || "")) return; } catch (_) {}
   try { if (localStorage.getItem(KEY) === ENTRY_HASH) return; } catch (_) {}
   async function sha(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(s))); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
   function build() {
@@ -313,7 +314,7 @@ const CFG = {
   driveAppFolder:"1d5uyIZFOyXQ772JV4BlVKbhKHZmFHGmq",
   adminHash:"27e440b006d89ef4abc4bd5d31fb377a9b7605888a817c7a52c2a33aee69d601"
 };
-const APP_VERSION = "2026-10-02 v16";
+const APP_VERSION = "2026-10-02 v17";
 let adminOk = false;
 async function isOwnerUser() { try { if (!GAS && window.claude && window.claude.use) { const u = await window.claude.use("user"); return !!(u && u.isOwner && u.isOwner()); } } catch (_) {} return false; }
 async function sha256hex(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(s))); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
@@ -872,7 +873,8 @@ function renderSigs() {
       <canvas data-pad="${p}" aria-label="Zone de signature ${t}"></canvas>
       <div class="pad-foot"><span data-sigat="${p}"></span><button type="button" class="btn ghost" data-act="clearSig" data-p="${p}">Effacer</button></div></div>`).join("")}</div>
     <label class="fld"><span>Remise de l'exemplaire du locataire</span><select id="f-remise" data-k="remise">${[["auto", GAS ? "Envoi automatique par e-mail à la clôture (PDF joint)" : "Partage automatique via Google Drive à la clôture"], ["mail", "Envoi par e-mail par le bailleur le jour même"], ["main", "Remise en main propre d'un exemplaire imprimé"]].map(([a, b]) => `<option value="${a}"${(S.remise || "auto") === a ? " selected" : ""}>${b}</option>`).join("")}</select></label>
-    <div class="actions"><button type="button" class="btn primary" data-act="final" id="btnFinal">Clôturer, signer et envoyer sur le Drive</button><button type="button" class="btn ghost" data-act="preview">Aperçu</button><button type="button" class="btn ghost" data-act="draft">PDF brouillon</button></div>
+    <div class="actions"><button type="button" class="btn primary" data-act="sendSign" id="btnSendSign">Envoyer au locataire pour signature</button><button type="button" class="btn ghost" data-act="final" id="btnFinal">Clôturer sur place (les deux présents)</button><button type="button" class="btn ghost" data-act="preview">Aperçu</button><button type="button" class="btn ghost" data-act="draft">PDF brouillon</button></div>
+    ${note(`<b>Deux façons de signer :</b><ul><li><b>À distance :</b> tu signes ta case, puis « Envoyer au locataire pour signature ». Il reçoit un lien par email, signe de son côté, et le document complet part sur le Drive.</li><li><b>Sur place :</b> les deux signez sur ce téléphone, puis « Clôturer sur place ».</li></ul>`)}
     <div id="checkPanel" class="check" role="alert" hidden></div>
     <p id="msg" role="status"></p><p id="driveMsg" role="status"></p>
     ${note(`<ul><li>Signature électronique simple au sens de l'article 1367 du Code civil. Le document est horodaté, hashé (SHA-256), et toute modification postérieure à une signature efface automatiquement les signatures.</li><li>La case « Certifié exact, lu et approuvé » est un élément de preuve du consentement éclairé.</li><li>À la clôture, le PDF signé part dans le dossier « États des lieux » du Google Drive, avec un JSON d'archive et le registre RGPD.</li><li>Garde le PDF au moins 3 ans après la restitution du dépôt (art. 7-1 de la loi de 1989).</li><li>Si l'état des lieux ne peut pas être établi à l'amiable : un commissaire de justice établit l'état des lieux, frais partagés par moitié.</li></ul>`)}`;
@@ -1147,6 +1149,9 @@ document.addEventListener("click", async e => {
     case "final": { if (!showCheck("final")) return; await finalize(); return; }
     case "forceGen": { hideCheck(); if (b.dataset.kind === "final") await finalize(); else await exportPdf(true); return; }
     case "hideCheck": hideCheck(); return;
+    case "sendSign": struct = false; await sendForSignature(); return;
+    case "previewSign": struct = false; await previewSignDoc(); return;
+    case "doSendSign": struct = false; await doSendForSignature(); return;
     case "goto": { const sec = b.dataset.sec; openSet.add(sec); const d = document.querySelector(`[data-oid="${sec}"]`); if (d) { d.open = true; d.scrollIntoView({ behavior:"smooth", block:"start" }); } return; }
     case "openRecap": struct = false; openRecap(); return;
     case "closeRecap": struct = false; closeModal(); return;
@@ -1844,12 +1849,116 @@ function normalize(st) {
   return st;
 }
 
-document.getElementById("form").disabled = true;
-render(); renderSigs();
-document.getElementById("form").disabled = true;
+function pdfBaseName() {
+  const slug = ((S.apt || "") + "-" + (S.logement.adresse || "logement")).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+  return `EDL-${S.typeEdl}-${S.date}-${slug}.pdf`;
+}
+// --- Signature à distance : le bailleur envoie, le locataire signe par lien email ---
+async function sendForSignature() {
+  if (S.locked || S.readonly) { msg("Document déjà clôturé ou envoyé.", true); return; }
+  if (!S.sig.bailleur || !S.sig.lu.bailleur) { msg("Signe d'abord ta case (bailleur) et coche « Certifié exact » avant d'envoyer au locataire.", true); document.getElementById("sigs").scrollIntoView({ behavior: "smooth" }); return; }
+  const te = tenantEmails();
+  if (!te.length) { msg("Renseigne un e-mail valide pour le locataire (section Parties) avant l'envoi.", true); return; }
+  const { warn } = checkIssues(false);
+  const warnHtml = warn.length
+    ? `<div style="font-weight:600;margin:10px 0 4px">Points à vérifier (${warn.length}) :</div><ul style="margin:0 0 4px 18px">${warn.map(x => `<li>${esc(x.t)}</li>`).join("")}</ul>`
+    : `<p style="color:var(--ok);margin:10px 0">Aucun point bloquant détecté.</p>`;
+  modal(`<div class="modal-head"><span>Vérifier avant d'envoyer</span><button type="button" class="x" data-act="closeRecap" aria-label="Fermer">×</button></div>
+    <div class="modal-body" style="padding:16px;max-height:60vh;overflow:auto">
+      <p>Le lien de signature sera envoyé à :</p>
+      <p style="font-weight:700;font-size:1.05rem">${esc(te.join(", "))}</p>
+      <p style="margin-top:8px">Logement : ${esc(S.logement.adresse || "")}<br>Locataire : ${esc(locNames())}</p>
+      ${warnHtml}
+      <p style="font-size:13px;color:var(--muted);margin-top:10px">Tu as déjà signé ta case. Le locataire recevra un email avec un lien, relira le document et signera. Dès qu'il a signé, le document complet part sur le Drive (historique) et une copie PDF est envoyée aux deux.</p>
+    </div>
+    <div class="modal-foot"><button type="button" class="btn ghost" data-act="previewSign">Revoir le document</button><button type="button" class="btn ghost" data-act="closeRecap">Annuler</button><button type="button" class="btn primary" data-act="doSendSign">Confirmer l'envoi</button></div>`, "wide");
+}
+async function previewSignDoc() {
+  try { const blob = await buildPdf(false); window.open(URL.createObjectURL(blob), "_blank"); }
+  catch (e) { msg("Aperçu impossible.", true); }
+}
+async function doSendForSignature() {
+  closeModal();
+  const te = tenantEmails(); if (!te.length) { msg("E-mail du locataire manquant.", true); return; }
+  driveMsg("Envoi du lien de signature au locataire…");
+  try {
+    const who = (S.bailleur.representant || S.bailleur.nom || "").trim();
+    const res = await webPost("pending", { state: JSON.stringify(S), name: pdfBaseName(), tenantEmail: te[0], who: who });
+    if (res && res.ok) {
+      S.readonly = true; scheduleSave(); applyLock();
+      driveMsg("Lien de signature envoyé à " + (res.sent || te[0]) + ". Tu seras averti par email quand le locataire aura signé, et le document arrivera dans l'historique.");
+    } else {
+      driveMsg("Envoi impossible : " + ((res && res.error) || "erreur serveur") + ".", true);
+    }
+  } catch (e) { driveMsg("Envoi impossible : " + ((e && e.message) || "erreur") + ". Réessaie.", true); }
+}
+async function enterSignMode(id, token) {
+  const ov = document.createElement("div");
+  ov.id = "signScreen";
+  ov.style.cssText = "position:fixed;inset:0;z-index:90000;overflow:auto;background:var(--bg);-webkit-overflow-scrolling:touch";
+  (document.body || document.documentElement).appendChild(ov);
+  try { document.body.style.overflow = "hidden"; } catch (_) {}
+  const shell = inner => { ov.innerHTML = `<div style="max-width:760px;margin:0 auto;padding:18px 16px 70px">${inner}</div>`; };
+  shell(`<div style="text-align:center;padding:40px 0"><div style="font:800 1.9rem/1 var(--f-head)">SCI ALCF</div><p style="color:var(--muted);margin-top:10px">Chargement de votre document…</p></div>`);
+  let data;
+  try { data = await webGet({ action: "getpending", id: id, t: token }); }
+  catch (e) { data = { error: "Connexion impossible. Vérifiez votre réseau et rouvrez le lien." }; }
+  if (!data || data.error || !data.state) {
+    shell(`<div style="text-align:center;padding:50px 12px"><div style="font:800 1.6rem/1 var(--f-head);margin-bottom:12px">Lien indisponible</div><p style="color:var(--muted)">${esc((data && data.error) || "Document introuvable.")}</p><p style="color:var(--muted);font-size:13px;margin-top:14px">Si vous avez déjà signé, c'est normal : votre exemplaire vous a été envoyé par e-mail.</p></div>`);
+    return;
+  }
+  S = normalize(Object.assign(freshState(), data.state));
+  S.locked = false; S.readonly = false; S.clotureAt = null;
+  const who = (S.bailleur.representant || S.bailleur.nom || "le bailleur");
+  shell(`
+    <div style="text-align:center;padding:10px 0 4px"><div style="font:800 1.7rem/1 var(--f-head)">État des lieux ${S.typeEdl === "entree" ? "d'entrée" : "de sortie"}</div>
+      <p style="color:var(--muted);margin-top:8px">${esc(S.logement.adresse || "")}<br>Date : ${esc(fmtDate(S.date))}</p></div>
+    <div class="note" style="margin:10px 0">Bonjour ${esc(locNames())},<br>Ce document a été préparé et signé par ${esc(who)}. Merci de le relire, puis de signer ci-dessous.</div>
+    <div class="actions" style="margin:12px 0"><button type="button" class="btn ghost" id="_vdoc">Lire le document complet (PDF)</button></div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px">
+      <div style="font-weight:700;margin-bottom:8px">Votre signature</div>
+      <label style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;cursor:pointer"><input type="checkbox" id="_lu" style="width:20px;height:20px;flex:none;margin-top:1px"> <span>Certifié exact, lu et approuvé</span></label>
+      <canvas id="_sigpad" style="display:block;width:100%;height:170px;background:var(--pad-bg,#fff);border:1px dashed var(--pad-line,#c9d2de);border-radius:12px;touch-action:none"></canvas>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span style="font-size:13px;color:var(--muted)">Signez dans le cadre avec le doigt</span><button type="button" class="btn ghost" id="_clr">Effacer</button></div>
+    </div>
+    <div class="actions" style="margin-top:18px"><button type="button" class="btn primary" id="_go" style="font-size:1.08rem;padding:15px 22px;width:100%">Signer et valider l'envoi</button></div>
+    <p id="_sm" role="status" style="margin-top:12px;min-height:22px;font-weight:600"></p>
+  `);
+  setupPad(ov.querySelector("#_sigpad"), "locataire");
+  ov.querySelector("#_clr").addEventListener("click", () => { S.sig.locataire = null; S.sig.locataireAt = null; pads.locataire && pads.locataire(); });
+  ov.querySelector("#_vdoc").addEventListener("click", async () => { try { const blob = await buildPdf(false); window.open(URL.createObjectURL(blob), "_blank"); } catch (e) { const sm = ov.querySelector("#_sm"); sm.className = "err"; sm.textContent = "Aperçu impossible."; } });
+  ov.querySelector("#_go").addEventListener("click", async () => {
+    const sm = ov.querySelector("#_sm");
+    if (!ov.querySelector("#_lu").checked) { sm.className = "err"; sm.textContent = "Cochez « Certifié exact, lu et approuvé »."; return; }
+    if (!S.sig.locataire) { sm.className = "err"; sm.textContent = "Signez dans le cadre avant de valider."; return; }
+    const go = ov.querySelector("#_go"); go.disabled = true; sm.className = ""; sm.textContent = "Signature en cours, patientez…";
+    try {
+      S.sig.lu.locataire = true;
+      const now = new Date(); S.heureFin = hhmm(now); S.clotureAt = now.toISOString(); S.locked = true;
+      const out = await makePdf(false);
+      const emails = tenantEmails().concat([(S.bailleur.email || "").trim()]).filter(x => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+      const res = await webPost("save", { pdf: await b64(out.blob), name: out.name, emails: emails.join(","), json: archiveJson(), pendingId: id });
+      if (res && res.ok) {
+        shell(`<div style="text-align:center;padding:50px 12px"><div style="font-size:3.2rem;color:var(--ok)">✓</div><div style="font:800 1.6rem/1 var(--f-head);margin:12px 0">Merci, c'est signé.</div><p style="color:var(--muted)">Votre état des lieux signé a été enregistré. Une copie PDF vient de vous être envoyée par e-mail${res.sent && res.sent.length ? " (" + esc(res.sent.join(", ")) + ")" : ""}.</p><p style="color:var(--muted);font-size:13px;margin-top:18px">Vous pouvez fermer cette page.</p></div>`);
+        try { document.body.style.overflow = ""; } catch (_) {}
+      } else { sm.className = "err"; sm.textContent = "Enregistrement impossible : " + ((res && res.error) || "erreur serveur") + ". Réessayez dans un instant."; go.disabled = false; }
+    } catch (e) { sm.className = "err"; sm.textContent = "Erreur : " + ((e && e.message) || "inconnue") + ". Réessayez."; go.disabled = false; }
+  });
+}
+
+const SIGN_MODE = (function () { try { return new URLSearchParams(location.search || "").has("sign"); } catch (_) { return false; } })();
+if (!SIGN_MODE) {
+  document.getElementById("form").disabled = true;
+  render(); renderSigs();
+  document.getElementById("form").disabled = true;
+}
 
 (async () => {
   idb = await idbOpen();
+  if (SIGN_MODE) {
+    try { const sp = new URLSearchParams(location.search || ""); await enterSignMode(sp.get("sign"), sp.get("t") || ""); } catch (e) {}
+    return;
+  }
   // Pré-remplissage par lien : ?edlc=<base64url(JSON compact)> (lien public) ou #edlc=... (artefact)
   let pre = null;
   try {
