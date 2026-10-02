@@ -313,7 +313,7 @@ const CFG = {
   driveAppFolder:"1d5uyIZFOyXQ772JV4BlVKbhKHZmFHGmq",
   adminHash:"27e440b006d89ef4abc4bd5d31fb377a9b7605888a817c7a52c2a33aee69d601"
 };
-const APP_VERSION = "2026-10-02 v15";
+const APP_VERSION = "2026-10-02 v16";
 let adminOk = false;
 async function isOwnerUser() { try { if (!GAS && window.claude && window.claude.use) { const u = await window.claude.use("user"); return !!(u && u.isOwner && u.isOwner()); } } catch (_) {} return false; }
 async function sha256hex(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(s))); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
@@ -503,8 +503,8 @@ function freshState() {
     compteurs:[["Électricité heures pleines","kWh"],["Électricité heures creuses","kWh"],["Gaz","m³"],["Eau froide","m³"],["Eau chaude","m³"]]
       .map(([l, u]) => ({ label:l, unite:u, numero:"", entree:"", sortie:"", photos:[] })),
     compteursPhotos:[],
-    cles:["Clé","Badge / Bip"]
-      .map(l => ({ label:l, entree:"", sortie:"", obs:"" })),
+    cles:[{label:"Porte d'entrée"},{label:"Boîte aux lettres"},{label:"Cave / garage"},{label:"Bip immeuble",opts:["Clé immeuble","Badge","Bip immeuble"]},{label:"Télécommande portail"}]
+      .map(o => ({ label:o.label, opts:o.opts || null, entree:"", sortie:"", obs:"" })),
     pieces:[mkRoom("Entrée / couloir","entree"),mkRoom("Séjour","piece"),mkRoom("Cuisine","cuisine"),
       mkRoom("Chambre 1","chambre"),mkRoom("Chambre 2","chambre"),mkRoom("Chambre 3","chambre"),
       mkRoom("Salle de bains","sdb"),mkRoom("WC","wc"),mkRoom("Parking","annexe"),mkRoom("Équipements","equip")],
@@ -649,12 +649,17 @@ function secCompteurs() {
     ${note(`<ul><li>Une photo par compteur, avec l'index lisible.</li><li>Le locataire résilie lui-même ses contrats d'énergie et transmet ces index à ses fournisseurs.</li></ul>`)}`);
 }
 function secCles() {
-  const CLE_OPTS = ["Clé", "Badge / Bip"];
   const rows = S.cles.map((c, i) => {
     const bad = c.sortie !== "" && c.entree !== "" && num(c.sortie) < num(c.entree);
-    const opts = (CLE_OPTS.includes(c.label) ? CLE_OPTS : CLE_OPTS.concat([c.label]))
-      .map(o => `<option value="${esc(o)}"${o === c.label ? " selected" : ""}>${esc(o)}</option>`).join("");
-    return `<div class="row${bad ? " worse" : ""}" data-cle="${i}"><select class="el-label" id="f-cle-${i}" data-k="cles.${i}.label" aria-label="Type de clé">${opts}</select><button type="button" class="x" data-act="delCle" data-i="${i}" aria-label="Retirer">×</button>
+    let labelField;
+    if (c.opts && c.opts.length) {
+      const opts = (c.opts.includes(c.label) ? c.opts : c.opts.concat([c.label]))
+        .map(o => `<option value="${esc(o)}"${o === c.label ? " selected" : ""}>${esc(o)}</option>`).join("");
+      labelField = `<select class="el-label" id="f-cle-${i}" data-k="cles.${i}.label" aria-label="Type de clé">${opts}</select>`;
+    } else {
+      labelField = `<input class="el-label" id="f-cle-${i}" data-k="cles.${i}.label" value="${esc(c.label)}" aria-label="Type de clé">`;
+    }
+    return `<div class="row${bad ? " worse" : ""}" data-cle="${i}">${labelField}<button type="button" class="x" data-act="delCle" data-i="${i}" aria-label="Retirer">×</button>
       <div class="pair"><label><span>Remis à l'entrée</span><input id="f-cle-${i}-e" class="num-in" data-k="cles.${i}.entree" value="${esc(c.entree)}" inputmode="numeric"></label><label><span>Rendu à la sortie</span><input id="f-cle-${i}-s" class="num-in" data-k="cles.${i}.sortie" value="${esc(c.sortie)}" inputmode="numeric"></label></div>
       <input class="obs" id="f-cle-${i}-o" data-k="cles.${i}.obs" value="${esc(c.obs)}" placeholder="Observations"></div>`;
   }).join("");
@@ -1069,7 +1074,7 @@ document.addEventListener("click", async e => {
     case "delLoc": S.locataires.splice(i, 1); break;
     case "addCpt": S.compteurs.push({ label:"Autre compteur", unite:"", numero:"", entree:"", sortie:"", photos:[] }); break;
     case "delCpt": if (!armed(b, "✓")) return; S.compteurs.splice(i, 1); break;
-    case "addCle": S.cles.push({ label:"Clé", entree:"", sortie:"", obs:"" }); break;
+    case "addCle": S.cles.push({ label:"Autre", opts:null, entree:"", sortie:"", obs:"" }); break;
     case "delCle": S.cles.splice(i, 1); break;
     case "addRoom": { const t = document.getElementById("newRoomType").value; const n = document.getElementById("newRoomName").value.trim() || ROOM_TYPES.find(x => x[0] === t)[1]; const r = mkRoom(n, t); S.pieces.push(r); openSet.add("r" + r.id); break; }
     case "delRoom": if (!armed(b, "Confirmer la suppression")) return; S.pieces.splice(i, 1); break;
