@@ -314,7 +314,7 @@ const CFG = {
   driveAppFolder:"1d5uyIZFOyXQ772JV4BlVKbhKHZmFHGmq",
   adminHash:"27e440b006d89ef4abc4bd5d31fb377a9b7605888a817c7a52c2a33aee69d601"
 };
-const APP_VERSION = "2026-10-02 v17";
+const APP_VERSION = "2026-10-02 v18";
 let adminOk = false;
 async function isOwnerUser() { try { if (!GAS && window.claude && window.claude.use) { const u = await window.claude.use("user"); return !!(u && u.isOwner && u.isOwner()); } } catch (_) {} return false; }
 async function sha256hex(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(s))); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
@@ -601,19 +601,20 @@ function photosBlock(path) {
 }
 function modeCard() {
   const t = S.typeEdl;
-  return `<div class="card mode"><div class="modeseg" role="radiogroup" aria-label="Type d'état des lieux">
-    <button type="button" class="mode-b" data-act="setType" data-t="entree" aria-pressed="${t === 'entree'}">État d'ENTRÉE</button>
-    <button type="button" class="mode-b" data-act="setType" data-t="sortie" aria-pressed="${t === 'sortie'}">État de SORTIE</button></div>
+  const label = t === 'entree' ? "ÉTAT D'ENTRÉE" : "ÉTAT DE SORTIE";
+  return `<div class="card mode"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span style="font:700 13px var(--f-mono);letter-spacing:.04em;padding:5px 12px;border-radius:99px;background:color-mix(in srgb,var(--c,var(--accent)) 14%,var(--card));color:var(--c,var(--accent))">${label}</span>
+    <span class="pad-sub" style="margin:0">${t === 'entree' ? "Entrée d'un nouveau locataire." : "Sortie : comparaison entrée / sortie."}</span></div>
     <div class="actions">
       <button type="button" class="btn ghost sm" data-act="openHist">Historique / comparer</button>
       <button type="button" class="btn ghost sm" data-act="openRecap">Récapitulatif</button>
     </div>
-    <p class="pad-sub" style="margin:0">${t === 'entree' ? "Entrée d'un nouveau locataire : une seule colonne d'état." : "Sortie : colonnes entrée et sortie, avec comparaison."}</p></div>`;
+    <p class="pad-sub" style="margin:0">Le type (entrée ou sortie) est déterminé automatiquement selon l'état du logement, via « Démarrer » ci-dessous.</p></div>`;
 }
 function aptCard() {
   return `<div class="card apt"><label class="fld"><span>Logement concerné</span><select id="aptSel">${Object.entries(APTS).map(([k, a]) => `<option value="${esc(k)}"${k === S.apt ? " selected" : ""}>${esc(a.label)}</option>`).join("")}</select></label>
-    <div class="actions"><button type="button" class="btn primary" data-act="loadApt">Charger ce logement</button></div>
-    <p class="pad-sub" style="margin:0">Charge les pièces et les informations connues du logement choisi.</p></div>`;
+    <div class="actions"><button type="button" class="btn primary" data-act="launchApt">Démarrer / continuer</button></div>
+    <p class="pad-sub" style="margin:0">L'appli vérifie l'historique du logement : libre → nouvel état d'entrée pré-rempli depuis la dernière sortie ; locataire en place → état de sortie ; logement neuf ou en travaux → création (réservée au gérant).</p></div>`;
 }
 const ROOM_TYPES = [["piece","Pièce de vie"],["chambre","Chambre"],["cuisine","Cuisine"],["sdb","Salle de bains"],["wc","WC"],["entree","Entrée / couloir"],["exterieur","Balcon / terrasse"],["annexe","Cave / parking / box"],["equip","Équipements"],["meuble","Inventaire meublé"],["autre","Autre"]];
 
@@ -999,6 +1000,64 @@ async function histLoad(id, makeSortie) {
   el.hidden = true; render(); renderSigs(); window.scrollTo(0, 0); scheduleSave();
 }
 
+// --- Démarrage gouverné par l'historique : report automatique + verrou + création ---
+function aptSlugPrefix(key) {
+  return String(key || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+async function aptHistory(key) {
+  const pref = aptSlugPrefix(key);
+  const all = await histFetch();
+  const mine = (all || []).filter(a => { const s = String(a.apt || ""); return s === pref || s.indexOf(pref + "-") === 0; });
+  mine.sort((a, b) => (String(b.date) + b.name).localeCompare(String(a.date) + a.name));
+  return mine;
+}
+function buildEntreeFromArchive(key, arch) {
+  S = freshState(); applyApt(key); S.typeEdl = "entree";
+  const d = new Date(); S.date = isoDate(d); S.dateCles = isoDate(d); S.heureDebut = hhmm(d); S.heureFin = "";
+  const prev = {}; (arch.pieces || []).forEach(r => (r.elements || []).forEach(e => { prev[r.nom + "|" + e.label] = e; }));
+  S.pieces.forEach(r => r.elements.forEach(e => { const p = prev[r.nom + "|" + e.label]; if (p) { e.entree = (p.sortie || p.entree || ""); if (p.materiau) e.materiau = p.materiau; } e.sortie = ""; e.obs = ""; e.photos = []; }));
+  const pc = {}; (arch.compteurs || []).forEach(c => pc[c.label] = c);
+  S.compteurs.forEach(c => { const p = pc[c.label]; if (p) { c.entree = (p.sortie || ""); if (p.numero) c.numero = p.numero; } c.sortie = ""; c.photos = []; });
+  const pk = {}; (arch.cles || []).forEach(k => pk[k.label] = k);
+  S.cles.forEach(c => { const p = pk[c.label]; if (p) c.entree = (p.sortie || p.entree || ""); c.sortie = ""; c.obs = ""; });
+  S.locataires = [{ nom: "", adresse: "", tel: "", email: "" }];
+  S.retenues = []; S.conforme = ""; S.obsLoc = ""; S.obsBail = ""; S.compteursPhotos = [];
+  S.sig = { bailleur: null, locataire: null, bailleurAt: null, locataireAt: null, lu: { bailleur: false, locataire: false } };
+  S.locked = false; S.readonly = false; S.clotureAt = null; S.driveUrl = null; S.driveAt = null;
+  S.prefilled = S.prefilled2 = S.prefilled3 = true;
+}
+async function launchApt(btn) {
+  const key = document.getElementById("aptSel").value;
+  if (hasWork() && btn && !armed(btn, "Confirmer : remplacer la saisie en cours")) return;
+  msg("Lecture de l'historique du logement…");
+  let hist;
+  try { hist = await aptHistory(key); }
+  catch (e) { msg("Impossible de lire l'historique (réseau ?). Réessaie dans un instant.", true); return; }
+  const last = hist[0] || null;
+  if (!last) {
+    msg("");
+    if (!(await ensureAdmin())) { msg("Premier état des lieux d'un logement : création réservée au gérant (code administrateur).", true); return; }
+    S = freshState(); applyApt(key); S.typeEdl = "entree";
+    S.locataires = [{ nom: "", adresse: "", tel: "", email: "" }];
+    S.pieces.forEach(r => r.elements.forEach(e => { e.entree = ""; e.sortie = ""; }));
+    render(); renderSigs(); applyLock(); window.scrollTo(0, 0);
+    msg("Création du premier état des lieux pour " + (APTS[key] ? APTS[key].label : key) + " (logement neuf ou en travaux, sans historique).");
+    return;
+  }
+  if (last.type === "entree") {
+    msg("Locataire en place : préparation de l'état de SORTIE (reprend l'entrée signée)…");
+    await histLoad(last.id, true);
+    return;
+  }
+  msg("Nouvel état d'ENTRÉE : reprise de la dernière sortie signée…");
+  let arch;
+  try { arch = normalize(JSON.parse(await histGetJson(last.id))); }
+  catch (e) { msg("Lecture du dernier état impossible : " + ((e && e.message) || "erreur") + ".", true); return; }
+  buildEntreeFromArchive(key, arch);
+  render(); renderSigs(); applyLock(); scheduleSave(); window.scrollTo(0, 0);
+  msg("État d'ENTRÉE pré-rempli pour " + (APTS[key] ? APTS[key].label : key) + " à partir de la sortie du " + fmtDate(last.date) + ". Mets le nom du nouveau locataire et corrige ce qui a changé.");
+}
+
 document.addEventListener("input", e => {
   const el = e.target;
   if (el.id === "roomSearch") { filterRooms(el.value); return; }
@@ -1165,12 +1224,7 @@ document.addEventListener("click", async e => {
       S.sig.bailleur = S.sig.locataire = null; S.sig.bailleurAt = S.sig.locataireAt = null;
       scheduleSave(); render(); Object.values(pads).forEach(d => d()); updateSigInfo(); return;
     }
-    case "loadApt": {
-      const key = document.getElementById("aptSel").value;
-      if (hasWork() && !armed(b, "Confirmer : remplacer les saisies")) return;
-      applyApt(key); invalidateSigs(); scheduleSave(); render(); renderSigs();
-      msg("Logement chargé : " + APTS[key].label + "."); window.scrollTo(0, 0); return;
-    }
+    case "launchApt": case "loadApt": { struct = false; await launchApt(b); return; }
     case "pushApp": {
       const am = document.getElementById("adminMsg"); am.textContent = "Envoi…";
       try {
