@@ -314,7 +314,7 @@ const CFG = {
   driveAppFolder:"1d5uyIZFOyXQ772JV4BlVKbhKHZmFHGmq",
   adminHash:"27e440b006d89ef4abc4bd5d31fb377a9b7605888a817c7a52c2a33aee69d601"
 };
-const APP_VERSION = "2026-10-05 v20";
+const APP_VERSION = "2026-10-05 v21";
 let adminOk = false;
 async function isOwnerUser() { try { if (!GAS && window.claude && window.claude.use) { const u = await window.claude.use("user"); return !!(u && u.isOwner && u.isOwner()); } } catch (_) {} return false; }
 async function sha256hex(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(s))); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
@@ -929,7 +929,14 @@ function invalidateSigs() {
 }
 function applyLock() {
   const ro = S.locked || S.readonly;
-  const fs = document.getElementById("form"); if (fs) fs.disabled = !!ro;
+  const fs = document.getElementById("form");
+  if (fs) {
+    fs.disabled = false; // ne jamais figer tout le bloc : la navigation reste accessible
+    fs.querySelectorAll("input,select,textarea,button").forEach(el => {
+      const nav = el.closest(".card.mode") || el.closest(".card.apt"); // Historique, Récap, choix du logement, Démarrer
+      el.disabled = ro && !nav;
+    });
+  }
   document.querySelectorAll("#sigs input,#sigs select,#sigs [data-act='clearSig'],#btnFinal").forEach(x => x.disabled = !!ro);
   const b = document.getElementById("lockBanner");
   if (b) {
