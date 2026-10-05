@@ -314,7 +314,7 @@ const CFG = {
   driveAppFolder:"1d5uyIZFOyXQ772JV4BlVKbhKHZmFHGmq",
   adminHash:"27e440b006d89ef4abc4bd5d31fb377a9b7605888a817c7a52c2a33aee69d601"
 };
-const APP_VERSION = "2026-10-05 v19";
+const APP_VERSION = "2026-10-05 v20";
 let adminOk = false;
 async function isOwnerUser() { try { if (!GAS && window.claude && window.claude.use) { const u = await window.claude.use("user"); return !!(u && u.isOwner && u.isOwner()); } } catch (_) {} return false; }
 async function sha256hex(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(s))); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
@@ -933,9 +933,10 @@ function applyLock() {
   document.querySelectorAll("#sigs input,#sigs select,#sigs [data-act='clearSig'],#btnFinal").forEach(x => x.disabled = !!ro);
   const b = document.getElementById("lockBanner");
   if (b) {
-    if (S.readonly) b.innerHTML = `<div class="banner" style="background:color-mix(in srgb,var(--muted) 15%,var(--card));color:var(--muted)">Document ouvert en lecture seule.</div>`;
+    if (S.readonly) b.innerHTML = `<div class="banner" style="background:color-mix(in srgb,var(--muted) 15%,var(--card));color:var(--muted)">Document ouvert en lecture seule.</div>
+      <div class="actions" style="margin-top:8px"><button type="button" class="btn primary" data-act="newDoc">Nouvel état des lieux</button><button type="button" class="btn ghost" data-act="signedPdf">Enregistrer le PDF sur le téléphone</button>${S.driveUrl ? `<a class="btn ghost" href="${esc(S.driveUrl)}" target="_blank" rel="noopener">Voir dans le Drive</a>` : ""}</div>`;
     else if (S.locked) b.innerHTML = `<div class="banner">Document signé et clôturé le ${esc(fmtDT(S.clotureAt))}. Il ne peut plus être modifié.${S.driveAt ? " Envoyé sur le Drive le " + esc(fmtDT(S.driveAt)) + "." : ""}</div>
-      <div class="actions" style="margin-top:8px"><button type="button" class="btn primary" data-act="drive">Envoyer sur le Drive</button><button type="button" class="btn ghost" data-act="signedPdf">Enregistrer sur le téléphone</button><button type="button" class="btn ghost" data-act="exportZip">Exporter le dossier (ZIP)</button>${S.driveUrl ? `<a class="btn ghost" href="${esc(S.driveUrl)}" target="_blank" rel="noopener">Voir dans le Drive</a>` : ""}<button type="button" class="btn danger" data-act="reopen">Rouvrir (efface les signatures)</button></div>`;
+      <div class="actions" style="margin-top:8px"><button type="button" class="btn primary" data-act="newDoc">Nouvel état des lieux</button><button type="button" class="btn ghost" data-act="drive">Envoyer sur le Drive</button><button type="button" class="btn ghost" data-act="signedPdf">Enregistrer sur le téléphone</button><button type="button" class="btn ghost" data-act="exportZip">Exporter le dossier (ZIP)</button>${S.driveUrl ? `<a class="btn ghost" href="${esc(S.driveUrl)}" target="_blank" rel="noopener">Voir dans le Drive</a>` : ""}<button type="button" class="btn danger" data-act="reopen">Rouvrir (efface les signatures)</button></div>`;
     else b.innerHTML = "";
   }
 }
@@ -1217,6 +1218,7 @@ document.addEventListener("click", async e => {
     case "closePhoto": struct = false; closeModal(); return;
     case "applyBlur": struct = false; await applyBlur(b); return;
     case "exportZip": struct = false; await exportZip(); return;
+    case "newDoc": { struct = false; if (!S.readonly && !S.locked && hasWork() && !armed(b, "Confirmer : nouveau document")) return; S = freshState(); scheduleSave(); render(); renderSigs(); applyLock(); window.scrollTo(0, 0); msg("Nouveau document. Choisis le logement puis « Démarrer »."); return; }
     case "reopen": {
       if (!(await ensureAdmin())) { msg("Réouverture réservée au gérant de la SCI (code administrateur requis).", true); return; }
       if (!armed(b, "Confirmer : rouvrir")) return;
