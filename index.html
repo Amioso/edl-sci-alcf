@@ -314,7 +314,7 @@ const CFG = {
   driveAppFolder:"1d5uyIZFOyXQ772JV4BlVKbhKHZmFHGmq",
   adminHash:"27e440b006d89ef4abc4bd5d31fb377a9b7605888a817c7a52c2a33aee69d601"
 };
-const APP_VERSION = "2026-10-05 v21";
+const APP_VERSION = "2026-10-05 v22";
 let adminOk = false;
 async function isOwnerUser() { try { if (!GAS && window.claude && window.claude.use) { const u = await window.claude.use("user"); return !!(u && u.isOwner && u.isOwner()); } } catch (_) {} return false; }
 async function sha256hex(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(s))); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
@@ -983,7 +983,7 @@ async function openHist() {
   }
   list.sort((a, b) => (b.date + b.name).localeCompare(a.date + a.name));
   const rows = list.length ? list.map(a => `<div class="hist-item"><div class="hi-t"><span class="tag ${a.type}">${a.type === "entree" ? "Entrée" : a.type === "sortie" ? "Sortie" : "?"}</span> <b>${esc(a.apt)}</b> · ${esc(fmtDate(a.date) || a.date)}</div>
-    <div class="actions"><button type="button" class="btn ghost sm" data-act="histOpen" data-id="${esc(a.id)}">Ouvrir (lecture)</button>${a.type === "entree" ? `<button type="button" class="btn sm" data-act="histSortie" data-id="${esc(a.id)}">Faire l'état de sortie</button>` : ""}</div></div>`).join("") : `<p class="pad-sub">Aucun état des lieux archivé.</p>`;
+    <div class="actions"><button type="button" class="btn ghost sm" data-act="histOpen" data-id="${esc(a.id)}">Ouvrir (lecture)</button><button type="button" class="btn ghost sm" data-act="histSign" data-id="${esc(a.id)}">Faire signer (locataire)</button>${a.type === "entree" ? `<button type="button" class="btn sm" data-act="histSortie" data-id="${esc(a.id)}">Faire l'état de sortie</button>` : ""}</div></div>`).join("") : `<p class="pad-sub">Aucun état des lieux archivé.</p>`;
   el.innerHTML = `<div class="hist-head"><b>Historique</b><button type="button" class="x" data-act="closeHist" aria-label="Fermer">×</button></div><p class="pad-sub">Ouvrir remplace la saisie en cours.</p>${rows}`;
 }
 function clearForSortie(st) {
@@ -1008,6 +1008,19 @@ async function histLoad(id, makeSortie) {
   el.hidden = true; render(); renderSigs(); window.scrollTo(0, 0); scheduleSave();
 }
 
+async function histSign(id) {
+  const el = document.getElementById("histPanel"); const old = el.innerHTML;
+  el.innerHTML += '<p class="pad-sub">Ouverture…</p>';
+  let obj;
+  try { const j = await histGetJson(id); obj = normalize(JSON.parse(j)); }
+  catch (e) { el.innerHTML = old; msg("Ouverture impossible : " + ((e && e.message) || "erreur"), true); return; }
+  S = obj; S.archiveId = id;
+  S.locked = false; S.readonly = false; S.clotureAt = null; S.driveUrl = null; S.driveAt = null;
+  S.sig = { bailleur: null, locataire: null, bailleurAt: null, locataireAt: null, lu: { bailleur: false, locataire: false } };
+  el.hidden = true; render(); renderSigs(); applyLock(); scheduleSave();
+  const sg = document.getElementById("sigs"); if (sg) sg.scrollIntoView({ behavior: "smooth" });
+  msg("Signe ta case (bailleur) et coche « Certifié exact », puis « Envoyer au locataire pour signature ».");
+}
 // --- Démarrage gouverné par l'historique : report automatique + verrou + création ---
 function aptSlugPrefix(key) {
   return String(key || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -1161,6 +1174,7 @@ document.addEventListener("click", async e => {
     case "closeHist": struct = false; document.getElementById("histPanel").hidden = true; return;
     case "histOpen": struct = false; await histLoad(b.dataset.id, false); return;
     case "histSortie": struct = false; await histLoad(b.dataset.id, true); return;
+    case "histSign": struct = false; await histSign(b.dataset.id); return;
     case "copy": S.pieces[i].elements.forEach(x => { if (!x.sortie && x.entree) x.sortie = x.entree; }); break;
     case "addEl": S.pieces[i].elements.push({ label:"Nouvel élément", materiau:"", entree:"", sortie:"", obs:"", photos:[] }); break;
     case "delEl": if (!armed(b, "✓")) return; S.pieces[i].elements.splice(j, 1); break;
@@ -1578,7 +1592,8 @@ function stripState(st) {
 }
 function archiveJson() {
   const o = JSON.parse(JSON.stringify(stripState(S)));
-  const strip = a => (a || []).map(p => ({ at:p.at }));
+  // On garde les photos (data) dans l'archive : elles restent visibles dans l'historique et après signature.
+  const strip = a => (a || []).map(p => ({ data:p.data, at:p.at }));
   o.pieces.forEach(r => { r.photos = strip(r.photos); r.elements.forEach(e => e.photos = strip(e.photos)); });
   o.compteurs.forEach(c => c.photos = strip(c.photos));
   o.compteursPhotos = strip(o.compteursPhotos);
