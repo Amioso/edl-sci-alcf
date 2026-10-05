@@ -314,7 +314,7 @@ const CFG = {
   driveAppFolder:"1d5uyIZFOyXQ772JV4BlVKbhKHZmFHGmq",
   adminHash:"27e440b006d89ef4abc4bd5d31fb377a9b7605888a817c7a52c2a33aee69d601"
 };
-const APP_VERSION = "2026-10-02 v18";
+const APP_VERSION = "2026-10-05 v19";
 let adminOk = false;
 async function isOwnerUser() { try { if (!GAS && window.claude && window.claude.use) { const u = await window.claude.use("user"); return !!(u && u.isOwner && u.isOwner()); } } catch (_) {} return false; }
 async function sha256hex(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(s))); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
@@ -1659,7 +1659,13 @@ async function saveDrive(blob, name, lightMaker, isDraft) {
   if (WEB) {
     driveMsg("Envoi vers le Google Drive…");
     try {
-      const pdf64 = await b64(blob);
+      let b = blob;
+      if (b.size > 3 * 1024 * 1024 && lightMaker) {
+        driveMsg("PDF volumineux (" + Math.round(b.size / 1048576) + " Mo) : compression des photos…");
+        try { const lb = await lightMaker(); if (lb && lb.size && lb.size < b.size) b = lb; } catch (_) {}
+      }
+      if (b.size > 24 * 1024 * 1024) { driveMsg("PDF trop lourd même après compression (" + Math.round(b.size / 1048576) + " Mo). Retire quelques photos, puis réessaie « Envoyer sur le Drive ».", true); return false; }
+      const pdf64 = await b64(b);
       const emails = (!isDraft && (S.remise || "auto") === "auto") ? tenantEmails() : [];
       const res = await webPost("save", { pdf: pdf64, name: name, emails: emails.join(","), json: isDraft ? "" : archiveJson() });
       if (res && res.ok) {
