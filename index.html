@@ -314,7 +314,7 @@ const CFG = {
   driveAppFolder:"1d5uyIZFOyXQ772JV4BlVKbhKHZmFHGmq",
   adminHash:"27e440b006d89ef4abc4bd5d31fb377a9b7605888a817c7a52c2a33aee69d601"
 };
-const APP_VERSION = "2026-10-05 v22";
+const APP_VERSION = "2026-10-05 v23";
 let adminOk = false;
 async function isOwnerUser() { try { if (!GAS && window.claude && window.claude.use) { const u = await window.claude.use("user"); return !!(u && u.isOwner && u.isOwner()); } } catch (_) {} return false; }
 async function sha256hex(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(s))); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
@@ -941,7 +941,8 @@ function applyLock() {
   const b = document.getElementById("lockBanner");
   if (b) {
     if (S.readonly) b.innerHTML = `<div class="banner" style="background:color-mix(in srgb,var(--muted) 15%,var(--card));color:var(--muted)">Document ouvert en lecture seule.</div>
-      <div class="actions" style="margin-top:8px"><button type="button" class="btn primary" data-act="newDoc">Nouvel état des lieux</button><button type="button" class="btn ghost" data-act="signedPdf">Enregistrer le PDF sur le téléphone</button>${S.driveUrl ? `<a class="btn ghost" href="${esc(S.driveUrl)}" target="_blank" rel="noopener">Voir dans le Drive</a>` : ""}</div>`;
+      <div class="actions" style="margin-top:8px">${S.archiveId ? `<button type="button" class="btn primary" data-act="histEmailPdf">Envoyer au locataire</button><button type="button" class="btn ghost" data-act="histPrintPdf">Imprimer le PDF</button><button type="button" class="btn ghost" data-act="histDownloadPdf">Télécharger le PDF</button>` : ""}<button type="button" class="btn ghost" data-act="newDoc">Nouvel état des lieux</button></div>
+      <p id="histMsg" role="status" style="margin:8px 0 0;min-height:18px;font-size:13px"></p>`;
     else if (S.locked) b.innerHTML = `<div class="banner">Document signé et clôturé le ${esc(fmtDT(S.clotureAt))}. Il ne peut plus être modifié.${S.driveAt ? " Envoyé sur le Drive le " + esc(fmtDT(S.driveAt)) + "." : ""}</div>
       <div class="actions" style="margin-top:8px"><button type="button" class="btn primary" data-act="newDoc">Nouvel état des lieux</button><button type="button" class="btn ghost" data-act="drive">Envoyer sur le Drive</button><button type="button" class="btn ghost" data-act="signedPdf">Enregistrer sur le téléphone</button><button type="button" class="btn ghost" data-act="exportZip">Exporter le dossier (ZIP)</button>${S.driveUrl ? `<a class="btn ghost" href="${esc(S.driveUrl)}" target="_blank" rel="noopener">Voir dans le Drive</a>` : ""}<button type="button" class="btn danger" data-act="reopen">Rouvrir (efface les signatures)</button></div>`;
     else b.innerHTML = "";
@@ -1003,9 +1004,9 @@ async function histLoad(id, makeSortie) {
   let obj;
   try { const j = await histGetJson(id); obj = normalize(JSON.parse(j)); }
   catch (e) { el.innerHTML = old; msg("Ouverture impossible : " + ((e && e.message) || "erreur"), true); return; }
-  if (makeSortie) { S = clearForSortie(obj); msg("État de sortie préparé à partir de l'entrée."); }
-  else { S = obj; S.locked = true; S.readonly = true; msg("Document ouvert en lecture seule."); }
-  el.hidden = true; render(); renderSigs(); window.scrollTo(0, 0); scheduleSave();
+  if (makeSortie) { S = clearForSortie(obj); S.archiveId = null; msg("État de sortie préparé à partir de l'entrée."); }
+  else { S = obj; S.archiveId = id; S.locked = true; S.readonly = true; msg("Document ouvert en lecture seule."); }
+  el.hidden = true; render(); renderSigs(); applyLock(); window.scrollTo(0, 0); scheduleSave();
 }
 
 async function histSign(id) {
@@ -1020,6 +1021,24 @@ async function histSign(id) {
   el.hidden = true; render(); renderSigs(); applyLock(); scheduleSave();
   const sg = document.getElementById("sigs"); if (sg) sg.scrollIntoView({ behavior: "smooth" });
   msg("Signe ta case (bailleur) et coche « Certifié exact », puis « Envoyer au locataire pour signature ».");
+}
+function histMsg(t, err) { const m = document.getElementById("histMsg"); if (m) { m.textContent = t; m.style.color = err ? "var(--bad)" : "var(--muted)"; } }
+async function histPdfInfo() {
+  if (!S.archiveId) { histMsg("Document non identifié.", true); return null; }
+  try { const r = await webGet({ action: "pdfinfo", id: S.archiveId }); if (r && r.ok) return r; histMsg((r && r.error) || "PDF signé introuvable.", true); return null; }
+  catch (e) { histMsg("Lecture impossible : " + ((e && e.message) || "erreur"), true); return null; }
+}
+async function histDownloadPdf() { histMsg("Préparation du téléchargement…"); const r = await histPdfInfo(); if (!r) return; histMsg("Téléchargement lancé."); try { window.open("https://drive.google.com/uc?export=download&id=" + r.pdfId, "_blank"); } catch (_) {} }
+async function histPrintPdf() { histMsg("Ouverture du PDF…"); const r = await histPdfInfo(); if (!r) return; histMsg("Le PDF s'ouvre dans un onglet : utilise le bouton Imprimer de la visionneuse."); try { window.open(r.url, "_blank"); } catch (_) {} }
+async function histEmailPdf(btn) {
+  if (!S.archiveId) { histMsg("Document non identifié.", true); return; }
+  if (btn && !armed(btn, "Confirmer l'envoi")) { histMsg("Confirme pour envoyer le PDF signé au locataire."); return; }
+  histMsg("Envoi au locataire…");
+  try {
+    const res = await webPost("emailpdf", { id: S.archiveId });
+    if (res && res.ok) histMsg("PDF signé envoyé à " + ((res.sent || []).join(", ") || "locataire") + ".");
+    else histMsg("Envoi impossible : " + ((res && res.error) || "erreur") + ".", true);
+  } catch (e) { histMsg("Envoi impossible : " + ((e && e.message) || "erreur") + ".", true); }
 }
 // --- Démarrage gouverné par l'historique : report automatique + verrou + création ---
 function aptSlugPrefix(key) {
@@ -1175,6 +1194,9 @@ document.addEventListener("click", async e => {
     case "histOpen": struct = false; await histLoad(b.dataset.id, false); return;
     case "histSortie": struct = false; await histLoad(b.dataset.id, true); return;
     case "histSign": struct = false; await histSign(b.dataset.id); return;
+    case "histEmailPdf": struct = false; await histEmailPdf(b); return;
+    case "histPrintPdf": struct = false; await histPrintPdf(); return;
+    case "histDownloadPdf": struct = false; await histDownloadPdf(); return;
     case "copy": S.pieces[i].elements.forEach(x => { if (!x.sortie && x.entree) x.sortie = x.entree; }); break;
     case "addEl": S.pieces[i].elements.push({ label:"Nouvel élément", materiau:"", entree:"", sortie:"", obs:"", photos:[] }); break;
     case "delEl": if (!armed(b, "✓")) return; S.pieces[i].elements.splice(j, 1); break;
